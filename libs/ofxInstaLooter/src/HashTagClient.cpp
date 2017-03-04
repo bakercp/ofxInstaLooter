@@ -112,7 +112,15 @@ Image Image::createAndStoreFromPath(const std::filesystem::path& rawImagePath,
     Image image = fromPath(rawImagePath);
     std::filesystem::path newPath = baseStorePath / relativeStorePathForImage(image);
     std::filesystem::create_directories(newPath.parent_path());
+
+    if (std::filesystem::exists(newPath))
+    {
+        ofLogVerbose("Image::createAndStoreFromPath") << "Already there: " << newPath;
+    }
+
     std::filesystem::rename(image.path(), newPath);
+
+
     image._path = newPath;
     std::filesystem::last_write_time(image.path(),
                                      static_cast<std::time_t>(image.timestamp()));
