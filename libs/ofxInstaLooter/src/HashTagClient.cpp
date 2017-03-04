@@ -197,8 +197,18 @@ void HashTagClient::_processLoot()
                              false,
                              &_fileExtensionFilter);
 
+    std::sort(paths.begin(), paths.end(),
+              [](const std::filesystem::path& p1, const std::filesystem::path& p2)
+              {
+                  return Image::fromPath(p1).timestamp() < Image::fromPath(p2).timestamp();
+              });
+
+
     if (!paths.empty())
     {
+        ofLogNotice("HashTagClient::_processLoot") << "First: " << *paths.begin();
+        ofLogNotice("HashTagClient::_processLoot") << " Last: " << *paths.rbegin();
+
         // We leave the newest so instaLooter will have a reference point for newer images.
         for (auto i = 0; i < paths.size() - 1; ++i)
         {
