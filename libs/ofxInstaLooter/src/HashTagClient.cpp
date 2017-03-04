@@ -208,6 +208,7 @@ void HashTagClient::_processLoot()
 
             ofLogVerbose("HashTagClient::_processLoot") << filename;
 
+            if (!isRunning()) break;
         }
     }
 
