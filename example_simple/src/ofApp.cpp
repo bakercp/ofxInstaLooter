@@ -12,7 +12,7 @@ void ofApp::setup()
 {
     ofLog::setChannel(std::make_shared<ofxIO::ThreadsafeConsoleLoggerChannel>());
     
-    // ofSetLogLevel(OF_LOG_VERBOSE);
+    ofSetLogLevel(OF_LOG_VERBOSE);
 
     ofJson settings = ofLoadJson("settings.json");
 

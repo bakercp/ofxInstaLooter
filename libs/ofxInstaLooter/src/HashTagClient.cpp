@@ -210,7 +210,7 @@ void HashTagClient::_processLoot()
         ofLogNotice("HashTagClient::_processLoot") << " Last: " << *paths.rbegin();
 
         // We leave the newest so instaLooter will have a reference point for newer images.
-        for (auto i = 0; i < paths.size() - 1; ++i)
+        for (std::size_t i = 0; i < paths.size() - 1; ++i)
         {
             auto filename = paths[i].filename();
 
@@ -222,7 +222,7 @@ void HashTagClient::_processLoot()
         }
     }
 
-
+    ofLogVerbose("HashTagClient::_processLoot") << "Done processing.";
 }
 
 
