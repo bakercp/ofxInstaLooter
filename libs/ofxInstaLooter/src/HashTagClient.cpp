@@ -152,6 +152,11 @@ HashTagClient::HashTagClient(const std::string& hashtag,
 
     // Add file folder extensions.
     _fileExtensionFilter.addExtensions({ "jpg", "jpeg", "gif", "png" });
+
+    IO::DirectoryUtils::list(_downloadPath,
+                             _lastDownloads,
+                             false,
+                             &_fileExtensionFilter);
 }
 
 
@@ -198,37 +203,20 @@ void HashTagClient::_processLoot()
 {
     std::vector<Image> images;
 
-    std::vector<std::filesystem::path> paths;
+    // We leave the newest so instaLooter will have a reference point for newer images.
+    for (const auto& path: _lastDownloads)
+    {
+        images.push_back(Image::createAndStoreFromPath(path, _basePath));
+        ofLogVerbose("HashTagClient::_processLoot") << path;
+        if (!isRunning()) break;
+    }
+
+    _lastDownloads.clear();
 
     IO::DirectoryUtils::list(_downloadPath,
-                             paths,
+                             _lastDownloads,
                              false,
                              &_fileExtensionFilter);
-
-    std::sort(paths.begin(), paths.end(),
-              [](const std::filesystem::path& p1, const std::filesystem::path& p2)
-              {
-                  return Image::fromPath(p1).timestamp() < Image::fromPath(p2).timestamp();
-              });
-
-
-    if (!paths.empty())
-    {
-        ofLogNotice("HashTagClient::_processLoot") << "First: " << *paths.begin();
-        ofLogNotice("HashTagClient::_processLoot") << " Last: " << *paths.rbegin();
-
-        // We leave the newest so instaLooter will have a reference point for newer images.
-        for (std::size_t i = 0; i < paths.size() - 1; ++i)
-        {
-            auto filename = paths[i].filename();
-
-            images.push_back(Image::createAndStoreFromPath(paths[i], _basePath));
-
-            ofLogVerbose("HashTagClient::_processLoot") << filename;
-
-            if (!isRunning()) break;
-        }
-    }
 
     ofLogVerbose("HashTagClient::_processLoot") << "Done processing.";
 }

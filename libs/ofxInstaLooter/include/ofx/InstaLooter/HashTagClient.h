@@ -118,6 +118,8 @@ private:
 
     IO::FileExtensionFilter _fileExtensionFilter;
 
+    std::vector<std::filesystem::path> _lastDownloads;
+
 };
 
 
