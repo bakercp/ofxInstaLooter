@@ -11,22 +11,27 @@
 void ofApp::setup()
 {
     ofLog::setChannel(std::make_shared<ofxIO::ThreadsafeConsoleLoggerChannel>());
+    
     ofSetLogLevel(OF_LOG_VERBOSE);
 
-    {
-    auto client = std::make_unique<ofxInstaLooter::HashTagClient>("fridaynightselfie",
-                                                                  ofToDataPath("temp", true),
-                                                                  30000);
-        client->start();
-        clients.push_back(std::move(client));
-    }
+    ofJson settings = ofLoadJson("settings.json");
 
+    std::filesystem::path instaLooterPath = settings["instalooter_path"].get<std::string>();
+    std::filesystem::path imageStorePath = ofToDataPath(settings["image_store_path"], true);
+
+    for (const auto& search: settings["hashtags"])
     {
-        auto client = std::make_unique<ofxInstaLooter::HashTagClient>("selfie",
-                                                                      ofToDataPath("temp", true),
-                                                                      5000);
+        std::string hashtag = search["hashtag"];
+        uint64_t interval = search["polling_interval"];
+
+        auto client = std::make_unique<ofxInstaLooter::HashTagClient>(hashtag,
+                                                                      imageStorePath,
+                                                                      interval,
+                                                                      instaLooterPath);
+
         client->start();
         clients.push_back(std::move(client));
+
     }
 
 }

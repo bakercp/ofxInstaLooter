@@ -1,0 +1,14 @@
+{
+  "instalooter_path": "/usr/local/bin/instaLooter",
+  "image_store_path": "store/",
+  "hashtags": [
+    {
+      "hashtag": "saachiselfie",
+      "polling_interval": 30000
+    },
+    {
+      "hashtag": "selfie",
+      "polling_interval": 5000
+    }
+  ]
+}

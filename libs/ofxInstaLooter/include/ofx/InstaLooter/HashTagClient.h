@@ -77,7 +77,8 @@ class HashTagClient: public IO::PollingThread
 public:
     HashTagClient(const std::string& hashtag,
                   const std::filesystem::path& imageStorePath,
-                  uint64_t pollingInterval = DEFAULT_POLLING_INTERVAL);
+                  uint64_t pollingInterval = DEFAULT_POLLING_INTERVAL,
+                  const std::filesystem::path& instaLooterPath = DEFAULT_INSTALOOTER_PATH);
 
     virtual ~HashTagClient();
 
@@ -108,6 +109,7 @@ private:
     std::filesystem::path _imageStorePath;
     std::filesystem::path _basePath;
     std::filesystem::path _downloadPath;
+    std::filesystem::path _instaLooterPath;
 
     uint64_t _numImagesToDownload = DEFAULT_IMAGES_TO_DOWNLOAD;
 

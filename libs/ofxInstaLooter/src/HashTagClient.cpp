@@ -120,16 +120,18 @@ Image Image::createAndStoreFromPath(const std::filesystem::path& rawImagePath,
 }
 
 
-const std::string HashTagClient::DEFAULT_INSTALOOTER_PATH = "";
+const std::string HashTagClient::DEFAULT_INSTALOOTER_PATH = "/usr/local/bin/instaLooter";
 const std::string HashTagClient::FILENAME_TEMPLATE = "{id}.{ownerid}.{datetime}";
 
 
 HashTagClient::HashTagClient(const std::string& hashtag,
                              const std::filesystem::path& imageStorePath,
-                             uint64_t pollingInterval):
+                             uint64_t pollingInterval,
+                             const std::filesystem::path& instaLooterPath):
     IO::PollingThread(std::bind(&HashTagClient::_loot, this), pollingInterval),
     _hashtag(hashtag),
-    _imageStorePath(imageStorePath)
+    _imageStorePath(imageStorePath),
+    _instaLooterPath(instaLooterPath)
 {
     // Construct paths.
     _basePath = _imageStorePath / _hashtag;
@@ -154,11 +156,6 @@ void HashTagClient::_loot()
 
     std::vector<std::string> args;
 
-    std::string path = "/Users/bakercp/anaconda/bin/instaLooter";
-//    std::string path = "/Users/bakercp/anaconda/bin/python";
-//    args.push_back("-m");
-//    args.push_back("instaLooter");
-
     args.push_back("hashtag");
     args.push_back(_hashtag);
     args.push_back(_downloadPath.string());
@@ -170,7 +167,7 @@ void HashTagClient::_loot()
     uint64_t startTime = ofGetElapsedTimeMillis();
 
     Poco::Pipe outPipe;
-    Poco::ProcessHandle handle = Poco::Process::launch(path, args, 0, &outPipe, &outPipe);
+    Poco::ProcessHandle handle = Poco::Process::launch(_instaLooterPath.string(), args, 0, &outPipe, &outPipe);
     Poco::PipeInputStream istr(outPipe);
 
     std::string str;
