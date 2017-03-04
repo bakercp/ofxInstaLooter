@@ -78,6 +78,7 @@ public:
     HashTagClient(const std::string& hashtag,
                   const std::filesystem::path& imageStorePath,
                   uint64_t pollingInterval = DEFAULT_POLLING_INTERVAL,
+                  uint64_t numImagesToDownload = DEFAULT_NUM_IMAGES_TO_DOWNLOAD,
                   const std::filesystem::path& instaLooterPath = DEFAULT_INSTALOOTER_PATH);
 
     virtual ~HashTagClient();
@@ -87,7 +88,7 @@ public:
         /// \brief The default Instagram polling interval in milliseconds.
         DEFAULT_POLLING_INTERVAL = 15000,
 
-        DEFAULT_IMAGES_TO_DOWNLOAD = 4000,
+        DEFAULT_NUM_IMAGES_TO_DOWNLOAD = 4000,
 
         /// \brief Default command timeout in milliseconds.
         DEFAULT_PROCESS_TIMEOUT = 20000
@@ -111,7 +112,7 @@ private:
     std::filesystem::path _downloadPath;
     std::filesystem::path _instaLooterPath;
 
-    uint64_t _numImagesToDownload = DEFAULT_IMAGES_TO_DOWNLOAD;
+    uint64_t _numImagesToDownload = DEFAULT_NUM_IMAGES_TO_DOWNLOAD;
 
     uint64_t _processTimeout = DEFAULT_PROCESS_TIMEOUT;
 

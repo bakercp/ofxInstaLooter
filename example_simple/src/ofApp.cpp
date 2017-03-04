@@ -23,10 +23,12 @@ void ofApp::setup()
     {
         std::string hashtag = search["hashtag"];
         uint64_t interval = search["polling_interval"];
+        uint64_t numImagesToDownload = search["num_images_to_download"];
 
         auto client = std::make_unique<ofxInstaLooter::HashTagClient>(hashtag,
                                                                       imageStorePath,
                                                                       interval,
+                                                                      numImagesToDownload,
                                                                       instaLooterPath);
 
         client->start();

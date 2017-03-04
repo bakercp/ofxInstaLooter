@@ -4,11 +4,18 @@
   "hashtags": [
     {
       "hashtag": "saachiselfie",
-      "polling_interval": 30000
+      "polling_interval": 60000,
+      "num_images_to_download": 10
+    },
+    {
+      "hashtag": "fridaynightselfie",
+      "polling_interval": 60000,
+      "num_images_to_download": 10
     },
     {
       "hashtag": "selfie",
-      "polling_interval": 5000
+      "polling_interval": 5000,
+      "num_images_to_download": 10
     }
   ]
 }

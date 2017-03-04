@@ -127,10 +127,12 @@ const std::string HashTagClient::FILENAME_TEMPLATE = "{id}.{ownerid}.{datetime}"
 HashTagClient::HashTagClient(const std::string& hashtag,
                              const std::filesystem::path& imageStorePath,
                              uint64_t pollingInterval,
+                             uint64_t numImagesToDownload,
                              const std::filesystem::path& instaLooterPath):
     IO::PollingThread(std::bind(&HashTagClient::_loot, this), pollingInterval),
     _hashtag(hashtag),
     _imageStorePath(imageStorePath),
+    _numImagesToDownload(numImagesToDownload),
     _instaLooterPath(instaLooterPath)
 {
     // Construct paths.
