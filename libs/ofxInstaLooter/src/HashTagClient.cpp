@@ -6,6 +6,7 @@
 
 
 #include "ofx/InstaLooter/HashTagClient.h"
+#include <iomanip>
 #include "Poco/PipeStream.h"
 #include "Poco/Process.h"
 #include "Poco/StreamCopier.h"
