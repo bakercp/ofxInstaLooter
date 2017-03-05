@@ -70,13 +70,63 @@ Image Image::fromPath(const std::filesystem::path& path)
     uint64_t id = std::stoull(idToken);
     uint64_t userId = std::stoull(userIdToken);
 
-    std::tm _tm = {};
-    std::stringstream ss(timestampToken);
-    ss >> std::get_time(&_tm, "%Y-%m-%d %Hh%Mm%Ss");
+    auto _tm = parseDateTime(timestampToken);
 
     std::time_t _time = std::mktime(&_tm);
 
+    std::cout << timestampToken << "-->" << std::put_time(&_tm, "%c %Z") << std::endl;
+
     return Image(path, id, userId, static_cast<uint64_t>(_time));
+}
+
+std::tm Image::parseDateTime(const std::string& dateTime)
+{
+    // Doesn't work across platform for an unknown reason.
+    //    std::stringstream ss(timestampToken);
+    //    ss >> std::get_time(&_tm, "%Y-%m-%d %Hh%Mm%Ss");
+
+    std::tm _tm = {};
+
+    auto tok0 = ofSplitString(dateTime, " ");
+
+    if (tok0.size() != 2)
+    {
+        throw Poco::InvalidArgumentException("Invalid dateTime: " + dateTime);
+    }
+
+    auto dateToken = tok0[0];
+    auto timeToken = tok0[1];
+
+    auto tok1 = ofSplitString(tok0[0], "-");
+
+    if (tok1.size() != 3)
+    {
+        throw Poco::InvalidArgumentException("Invalid dateTime: " + dateTime);
+    }
+
+    _tm.tm_year = ofToInt(tok1[0]) - 1900;
+    _tm.tm_mon = ofToInt(tok1[1]) - 1;
+    _tm.tm_mday = ofToInt(tok1[2]);
+
+    // 1451944358173325122.221088125.2017-2-16 22h21m17s0.jpg
+
+    auto hIndex = timeToken.find("h");
+    auto mIndex = timeToken.find("m");
+    auto sIndex = timeToken.find("s");
+
+    if (hIndex == std::string::npos ||
+        mIndex == std::string::npos ||
+        sIndex == std::string::npos)
+    {
+        throw Poco::InvalidArgumentException("Invalid timestamp: " + dateTime);
+    }
+
+    _tm.tm_hour = ofToInt(timeToken.substr(0, hIndex));
+    _tm.tm_min = ofToInt(timeToken.substr(hIndex + 1, mIndex - hIndex - 1));
+    _tm.tm_sec = ofToInt(timeToken.substr(mIndex + 1, sIndex - mIndex - 1));
+    // ignore milliseconds
+
+    return _tm;
 }
 
 

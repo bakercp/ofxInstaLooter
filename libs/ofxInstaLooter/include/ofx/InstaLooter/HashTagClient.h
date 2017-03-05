@@ -50,9 +50,13 @@ public:
     /// \returns the image or throws an Exception.
     static Image fromPath(const std::filesystem::path& path);
 
+    /// \throws Poco::InvalidArgumentException if invalid syntax.
+    static std::tm parseDateTime(const std::string& dateTime);
+
     /// \throws Poco::InvalidArgumentException if unable to parse.
     /// \returns a store path for the image, given the baseStorePath.
     static std::filesystem::path relativeStorePathForImage(const Image& image);
+
 
     enum
     {
