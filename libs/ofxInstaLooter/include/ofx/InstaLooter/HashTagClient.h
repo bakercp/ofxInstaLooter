@@ -86,7 +86,7 @@ public:
         DEFAULT_NUM_IMAGES_TO_DOWNLOAD = 4000,
 
         /// \brief Default command timeout in milliseconds.
-        DEFAULT_PROCESS_TIMEOUT = 60000,
+        DEFAULT_PROCESS_TIMEOUT = 300000,
 
         /// \brief Thread sleep timeout in milliseconds.
         PROCESS_THREAD_SLEEP = 1000
