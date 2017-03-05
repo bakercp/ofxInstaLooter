@@ -10,9 +10,11 @@
 
 void ofApp::setup()
 {
+    ofSetFrameRate(1);
+    
     ofLog::setChannel(std::make_shared<ofxIO::ThreadsafeConsoleLoggerChannel>());
     
-    ofSetLogLevel(OF_LOG_VERBOSE);
+    ofSetLogLevel(OF_LOG_NOTICE);
 
     ofJson settings = ofLoadJson("settings.json");
 

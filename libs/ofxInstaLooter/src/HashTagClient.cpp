@@ -56,7 +56,7 @@ uint64_t Image::timestamp() const
 Image Image::fromPath(const std::filesystem::path& path)
 {
     auto filename = path.filename();
-    auto tokens = ofSplitString(filename.string(), ".", true, true);
+    auto tokens = ofSplitString(filename.string(), ".");
 
     if (tokens.size() != 4)
     {
@@ -221,6 +221,7 @@ void HashTagClient::_loot()
     std::vector<Image> newImages;
 
     std::size_t skippedImages = 0;
+    std::size_t cleanedUp = 0;
 
     if (!rawImages.empty())
     {
@@ -238,7 +239,10 @@ void HashTagClient::_loot()
 
                 // If we had to kill the process, we keep all of them here.
                 if (!didKill)
+                {
+                    ++cleanedUp;
                     std::filesystem::remove(rawImage.path());
+                }
             }
             else
             {
@@ -250,7 +254,7 @@ void HashTagClient::_loot()
         }
     }
 
-    ofLogVerbose("HashTagClient::_loot") << "Done processing " << newImages.size() << ". Last procesed " << skippedImages;
+    ofLogNotice("HashTagClient::_loot") << "#" << _hashtag << ": Done processing " << newImages.size() << ". Skipped " << skippedImages << " Cleaned up: " << cleanedUp;
 }
 
 
