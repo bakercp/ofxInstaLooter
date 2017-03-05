@@ -76,6 +76,8 @@ Image Image::fromPath(const std::filesystem::path& path)
 
     std::time_t _time = std::mktime(&_tm);
 
+    std::filesystem::last_write_time(path, static_cast<std::time_t>(_time));
+
     return Image(path, id, userId, static_cast<uint64_t>(_time));
 }
 
@@ -106,27 +108,6 @@ std::filesystem::path Image::relativeStorePathForImage(const Image& image)
     return path;
 }
 
-Image Image::createAndStoreFromPath(const std::filesystem::path& rawImagePath,
-                                    const std::filesystem::path& baseStorePath)
-{
-    Image image = fromPath(rawImagePath);
-    std::filesystem::path newPath = baseStorePath / relativeStorePathForImage(image);
-    std::filesystem::create_directories(newPath.parent_path());
-
-    if (std::filesystem::exists(newPath))
-    {
-        ofLogVerbose("Image::createAndStoreFromPath") << "Already there: " << newPath;
-    }
-
-    std::filesystem::rename(image.path(), newPath);
-
-
-    image._path = newPath;
-    std::filesystem::last_write_time(image.path(),
-                                     static_cast<std::time_t>(image.timestamp()));
-    return image;
-}
-
 
 const std::string HashTagClient::DEFAULT_INSTALOOTER_PATH = "/usr/local/bin/instaLooter";
 const std::string HashTagClient::FILENAME_TEMPLATE = "{id}.{ownerid}.{datetime}";
@@ -152,11 +133,6 @@ HashTagClient::HashTagClient(const std::string& hashtag,
 
     // Add file folder extensions.
     _fileExtensionFilter.addExtensions({ "jpg", "jpeg", "gif", "png" });
-
-    IO::DirectoryUtils::list(_downloadPath,
-                             _lastDownloads,
-                             false,
-                             &_fileExtensionFilter);
 }
 
 
@@ -179,46 +155,102 @@ void HashTagClient::_loot()
     args.push_back("-n " + std::to_string(_numImagesToDownload));
     args.push_back("-T" + FILENAME_TEMPLATE);
 
-    uint64_t startTime = ofGetElapsedTimeMillis();
-
     Poco::Pipe outPipe;
-    Poco::ProcessHandle handle = Poco::Process::launch(_instaLooterPath.string(), args, 0, &outPipe, &outPipe);
+
+    Poco::ProcessHandle handle = Poco::Process::launch(_instaLooterPath.string(),
+                                                       args,
+                                                       nullptr,
+                                                       &outPipe,
+                                                       &outPipe);
     Poco::PipeInputStream istr(outPipe);
 
-    std::string str;
-    Poco::StreamCopier::copyToString(istr, str);
+    std::atomic<int> exitCode(0);
 
-    ofLogVerbose("HashTagClient::_loot") << str;
+    std::thread processThread([&](){
+        std::string outString;
+        Poco::StreamCopier::copyToString(istr, outString);
+        ofLogVerbose("HashTagClient::_loot") << "Process Output: " << outString;
+        exitCode = handle.wait();
+    });
 
-    int code = handle.wait();
+    bool didKill = false;
 
-    ofLogVerbose("HashTagClient::_loot") << "Process exited with code: " << code;
+    uint64_t startTime = ofGetElapsedTimeMillis();
 
-    _processLoot();
-}
-
-
-
-void HashTagClient::_processLoot()
-{
-    std::vector<Image> images;
-
-    // We leave the newest so instaLooter will have a reference point for newer images.
-    for (const auto& path: _lastDownloads)
+    while (isRunning())
     {
-        images.push_back(Image::createAndStoreFromPath(path, _basePath));
-        ofLogVerbose("HashTagClient::_processLoot") << path;
-        if (!isRunning()) break;
+        if (Poco::Process::isRunning(handle))
+        {
+            uint64_t now = ofGetElapsedTimeMillis();
+
+            if (now < (startTime + DEFAULT_PROCESS_TIMEOUT))
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(PROCESS_THREAD_SLEEP));
+            }
+            else
+            {
+                ofLogWarning("HashTagClient::_loot") << "Process timed out, killing.";
+                Poco::Process::kill(handle);
+                didKill = true;
+                break;
+            }
+        }
+        else break;
     }
 
-    _lastDownloads.clear();
+    try
+    {
+        ofLogVerbose("HashTagClient::_loot") << "Joining Process ...";
+        processThread.join();
+    }
+    catch (const std::exception& exc)
+    {
+        ofLogVerbose("HashTagClient::_loot") << "Exit: " << exc.what();
+    }
 
-    IO::DirectoryUtils::list(_downloadPath,
-                             _lastDownloads,
-                             false,
-                             &_fileExtensionFilter);
+    ofLogVerbose("HashTagClient::_loot") << "... joined and process exited with code: " << exitCode;
 
-    ofLogVerbose("HashTagClient::_processLoot") << "Done processing.";
+    std::vector<std::filesystem::path> paths;
+
+    IO::DirectoryUtils::list(_downloadPath, paths, false, &_fileExtensionFilter);
+
+    std::vector<Image> rawImages;
+
+    for (const auto& path: paths) rawImages.push_back(Image::fromPath(path));
+
+    std::vector<Image> newImages;
+
+    std::size_t skippedImages = 0;
+
+    if (!rawImages.empty())
+    {
+        // We leave the newest so instaLooter will have a reference point for newer images.
+        for (const auto& rawImage: rawImages)
+        {
+            std::filesystem::path newPath = _basePath / Image::relativeStorePathForImage(rawImage);
+            std::filesystem::create_directories(newPath.parent_path());
+
+            Image newImage(newPath, rawImage.id(), rawImage.userId(), rawImage.timestamp());
+
+            if (std::filesystem::exists(newPath))
+            {
+                ++skippedImages;
+
+                // If we had to kill the process, we keep all of them here.
+                if (!didKill)
+                    std::filesystem::remove(rawImage.path());
+            }
+            else
+            {
+                std::filesystem::copy(rawImage.path(), newImage.path());
+                newImages.push_back(newImage);
+            }
+
+            if (!isRunning()) break;
+        }
+    }
+
+    ofLogVerbose("HashTagClient::_loot") << "Done processing " << newImages.size() << ". Last procesed " << skippedImages;
 }
 
 

@@ -51,11 +51,6 @@ public:
     static Image fromPath(const std::filesystem::path& path);
 
     /// \throws Poco::InvalidArgumentException if unable to parse.
-    /// \returns An image that has been parsed and move to the .
-    static Image createAndStoreFromPath(const std::filesystem::path& rawImagePath,
-                                        const std::filesystem::path& baseStorePath);
-
-    /// \throws Poco::InvalidArgumentException if unable to parse.
     /// \returns a store path for the image, given the baseStorePath.
     static std::filesystem::path relativeStorePathForImage(const Image& image);
 
@@ -91,7 +86,10 @@ public:
         DEFAULT_NUM_IMAGES_TO_DOWNLOAD = 4000,
 
         /// \brief Default command timeout in milliseconds.
-        DEFAULT_PROCESS_TIMEOUT = 20000
+        DEFAULT_PROCESS_TIMEOUT = 60000,
+
+        /// \brief Thread sleep timeout in milliseconds.
+        PROCESS_THREAD_SLEEP = 1000
 
     };
 
@@ -103,7 +101,6 @@ public:
 
 private:
     void _loot();
-    void _processLoot();
 
     std::string _hashtag;
 
@@ -117,8 +114,6 @@ private:
     uint64_t _processTimeout = DEFAULT_PROCESS_TIMEOUT;
 
     IO::FileExtensionFilter _fileExtensionFilter;
-
-    std::vector<std::filesystem::path> _lastDownloads;
 
 };
 
