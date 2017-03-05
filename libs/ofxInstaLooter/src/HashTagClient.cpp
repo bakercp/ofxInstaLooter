@@ -170,7 +170,15 @@ void HashTagClient::_loot()
         std::string outString;
         Poco::StreamCopier::copyToString(istr, outString);
         ofLogVerbose("HashTagClient::_loot") << "Process Output: " << outString;
-        exitCode = handle.wait();
+
+        try
+        {
+            exitCode = handle.wait();
+        }
+        catch (const std::exception& exc)
+        {
+            ofLogWarning("HashTagClient::_loot") << "Process Thread: " << exc.what();
+        }
     });
 
     bool didKill = false;
@@ -187,15 +195,24 @@ void HashTagClient::_loot()
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(PROCESS_THREAD_SLEEP));
             }
-            else
-            {
-                ofLogWarning("HashTagClient::_loot") << "Process timed out, killing.";
-                Poco::Process::kill(handle);
-                didKill = true;
-                break;
-            }
+            else break;
         }
         else break;
+    }
+
+    if (Poco::Process::isRunning(handle))
+    {
+        ofLogWarning("HashTagClient::_loot") << "Process timed out, killing.";
+        Poco::Process::kill(handle);
+        didKill = true;
+    }
+
+    try
+    {
+        exitCode = handle.wait();
+    }
+    catch (const std::exception& exc)
+    {
     }
 
     try
@@ -219,9 +236,7 @@ void HashTagClient::_loot()
     for (const auto& path: paths) rawImages.push_back(Image::fromPath(path));
 
     std::vector<Image> newImages;
-
-    std::size_t skippedImages = 0;
-    std::size_t cleanedUp = 0;
+    std::vector<Image> rawImagesToDelete;
 
     if (!rawImages.empty())
     {
@@ -235,13 +250,9 @@ void HashTagClient::_loot()
 
             if (std::filesystem::exists(newPath))
             {
-                ++skippedImages;
-
-                // If we had to kill the process, we keep all of them here.
-                if (!didKill)
+                if (std::filesystem::exists(rawImage.path()))
                 {
-                    ++cleanedUp;
-                    std::filesystem::remove(rawImage.path());
+                    rawImagesToDelete.push_back(rawImage);
                 }
             }
             else
@@ -254,7 +265,20 @@ void HashTagClient::_loot()
         }
     }
 
-    ofLogNotice("HashTagClient::_loot") << "#" << _hashtag << ": Done processing " << newImages.size() << ". Skipped " << skippedImages << " Cleaned up: " << cleanedUp;
+    std::size_t cleanedUp = 0;
+
+    if (!newImages.empty() && !didKill)
+    {
+        for (const auto& rawImage: rawImagesToDelete)
+        {
+            if (std::filesystem::remove(rawImage.path()))
+            {
+                ++cleanedUp;
+            }
+        }
+    }
+
+    ofLogNotice("HashTagClient::_loot") << "#" << _hashtag << " New: " << newImages.size() << (didKill ? " [killed process]" : "") << " Old: " << rawImagesToDelete.size() << " Cleaned up: " << cleanedUp;
 }
 
 
