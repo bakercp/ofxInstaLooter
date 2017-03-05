@@ -75,8 +75,6 @@ Image Image::fromPath(const std::filesystem::path& path)
 
     std::time_t _time = std::mktime(&_tm);
 
-    std::cout << timestampToken << "-->" << std::put_time(&_tm, "%c %Z") << std::endl;
-
     return Image(path, id, userId, static_cast<uint64_t>(_time));
 }
 
