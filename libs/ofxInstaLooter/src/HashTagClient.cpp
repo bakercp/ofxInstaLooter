@@ -76,8 +76,6 @@ Image Image::fromPath(const std::filesystem::path& path)
 
     std::time_t _time = std::mktime(&_tm);
 
-    std::filesystem::last_write_time(path, static_cast<std::time_t>(_time));
-
     return Image(path, id, userId, static_cast<uint64_t>(_time));
 }
 
@@ -258,6 +256,7 @@ void HashTagClient::_loot()
             else
             {
                 std::filesystem::copy(rawImage.path(), newImage.path());
+                std::filesystem::last_write_time(newImage.path(), static_cast<std::time_t>(newImage.timestamp()));
                 newImages.push_back(newImage);
             }
 
