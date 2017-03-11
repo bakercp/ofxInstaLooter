@@ -12,6 +12,7 @@
 #include "Poco/StreamCopier.h"
 #include "ofLog.h"
 #include "ofx/IO/DirectoryUtils.h"
+#include "ofx/IO/ImageUtils.h"
 
 
 namespace ofx {
@@ -27,11 +28,15 @@ Post::Post(const std::filesystem::path& path,
            uint64_t id,
            uint64_t userId,
            uint64_t timestamp,
+           uint64_t width,
+           uint64_t height,
            const std::string& hashtag):
     _path(path),
     _id(id),
     _userId(userId),
     _timestamp(timestamp),
+    _width(width),
+    _height(height),
     _hashtag(hashtag)
 {
 }
@@ -58,6 +63,18 @@ uint64_t Post::userId() const
 uint64_t Post::timestamp() const
 {
     return _timestamp;
+}
+
+
+uint64_t Post::width() const
+{
+    return _width;
+}
+
+
+uint64_t Post::height() const
+{
+    return _height;
 }
 
 
@@ -102,7 +119,10 @@ Post Post::fromDownloadPath(const std::filesystem::path& path)
 
     std::time_t _time = std::mktime(&_tm);
 
-    return Post(path, id, userId, static_cast<uint64_t>(_time), hashtag);
+    uint64_t width = 0;
+    uint64_t height = 0;
+
+    return Post(path, id, userId, static_cast<uint64_t>(_time), width, height, hashtag);
 }
 
 
@@ -330,11 +350,9 @@ void HashtagClient::_loot()
             std::filesystem::path newPath = _savePath / Post::relativeStorePathForImage(rawPost);
             std::filesystem::create_directories(newPath.parent_path());
 
-            Post newPost(newPath,
-                         rawPost.id(),
-                         rawPost.userId(),
-                         rawPost.timestamp(),
-                         rawPost.hashtag());
+            // Update the path.
+            Post newPost = rawPost;
+            newPost._path = newPath;
 
             bool alreadySaved = false;
 
@@ -347,7 +365,6 @@ void HashtagClient::_loot()
                 }
             }
 
-
             if (alreadySaved || std::filesystem::exists(newPost.path()))
             {
                 if (std::filesystem::exists(rawPost.path()))
@@ -359,6 +376,15 @@ void HashtagClient::_loot()
             {
                 std::filesystem::copy(rawPost.path(), newPost.path());
                 std::filesystem::last_write_time(newPost.path(), static_cast<std::time_t>(newPost.timestamp()));
+
+                IO::ImageUtils::ImageHeader header;
+
+                if (IO::ImageUtils::loadHeader(header, newPost.path()))
+                {
+                    newPost._width = header.width;
+                    newPost._height = header.height;
+                }
+
                 newPosts.push_back(newPost);
             }
 

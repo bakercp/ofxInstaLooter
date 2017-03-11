@@ -31,12 +31,16 @@ public:
     /// \param id The image id.
     /// \param userId The user id.
     /// \param timestamp The timestamp of the image.
+    /// \param width Image width.
+    /// \param height Image height.
     /// \param hashtag The hashtag that yeilded the image.
     Post(const std::filesystem::path& path,
          uint64_t id,
          uint64_t userId,
          uint64_t timestamp,
-         const std::string& hashtags);
+         uint64_t width,
+         uint64_t height,
+         const std::string& hashtag);
 
     /// \returns the path to the image.
     std::filesystem::path path() const;
@@ -50,7 +54,13 @@ public:
     /// \returns the parsed timestamp.
     uint64_t timestamp() const;
 
-    /// \returns the hashtag that that yeilded the image.
+    /// \returns the detected image width.
+    uint64_t width() const;
+
+    /// \returns the detected image height.
+    uint64_t height() const;
+
+    /// \returns the hashtag that that yielded the image.
     std::string hashtag() const;
 
     bool isDuplicate() const;
@@ -77,11 +87,15 @@ public:
 private:
     bool _isDuplicate = false;
     std::filesystem::path _path;
+
     uint64_t _id = 0;
     uint64_t _userId = 0;
     uint64_t _timestamp = 0;
+    uint64_t _width = 0;
+    uint64_t _height = 0;
     std::string _hashtag;
 
+    friend class HashtagClient;
 };
 
 ///
@@ -144,7 +158,6 @@ private:
     IO::FileExtensionFilter _fileExtensionFilter;
 
     std::vector<Post> _lastPostsSaved;
-
 
 };
 

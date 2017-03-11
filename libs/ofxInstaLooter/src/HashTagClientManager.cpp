@@ -23,6 +23,7 @@ HashtagClientManager::~HashtagClientManager()
 {
 
 }
+    
 
 void HashtagClientManager::setup(const ofJson& paths, const ofJson& settings)
 {
@@ -66,6 +67,8 @@ void HashtagClientManager::_process()
                          post.id(),
                          post.userId(),
                          post.timestamp(),
+                         post.width(),
+                         post.height(),
                          post.hashtag());
 
             if (!std::filesystem::exists(newPath))
