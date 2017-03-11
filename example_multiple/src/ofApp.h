@@ -19,6 +19,6 @@ public:
     void setup();
     void update();
 
-    std::unique_ptr<ofxInstaLooter::HashtagClient> client;
+    ofxInstaLooter::HashtagClientManager manager;
 
 };

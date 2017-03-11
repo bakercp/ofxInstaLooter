@@ -5,7 +5,7 @@
 //
 
 
-#include "ofx/InstaLooter/HashTagClient.h"
+#include "ofx/InstaLooter/HashtagClient.h"
 #include <iomanip>
 #include "Poco/PipeStream.h"
 #include "Poco/Process.h"
@@ -18,44 +18,71 @@ namespace ofx {
 namespace InstaLooter {
 
 
-Image::Image(const std::filesystem::path& path,
-             uint64_t id,
-             uint64_t userId,
-             uint64_t timestamp):
-    _path(path),
-    _id(id),
-    _userId(userId),
-    _timestamp(timestamp)
+Post::Post()
 {
 }
 
 
-std::filesystem::path Image::path() const
+Post::Post(const std::filesystem::path& path,
+           uint64_t id,
+           uint64_t userId,
+           uint64_t timestamp,
+           const std::string& hashtag):
+    _path(path),
+    _id(id),
+    _userId(userId),
+    _timestamp(timestamp),
+    _hashtag(hashtag)
+{
+}
+
+
+std::filesystem::path Post::path() const
 {
     return _path;
 }
 
 
-uint64_t Image::id() const
+uint64_t Post::id() const
 {
     return _id;
 }
 
 
-uint64_t Image::userId() const
+uint64_t Post::userId() const
 {
     return _userId;
 }
 
 
-uint64_t Image::timestamp() const
+uint64_t Post::timestamp() const
 {
     return _timestamp;
 }
 
 
-Image Image::fromPath(const std::filesystem::path& path)
+std::string Post::hashtag() const
 {
+    return _hashtag;
+}
+
+
+bool Post::isDuplicate() const
+{
+    return _isDuplicate;
+}
+
+
+void Post::setIsDuplicate(bool isDuplicate)
+{
+    _isDuplicate = isDuplicate;
+}
+
+
+Post Post::fromDownloadPath(const std::filesystem::path& path)
+{
+    std::string hashtag = path.parent_path().parent_path().filename().string();
+
     auto filename = path.filename();
     auto tokens = ofSplitString(filename.string(), ".");
 
@@ -71,14 +98,15 @@ Image Image::fromPath(const std::filesystem::path& path)
     uint64_t id = std::stoull(idToken);
     uint64_t userId = std::stoull(userIdToken);
 
-    auto _tm = parseDateTime(timestampToken);
+    auto _tm = parseDownloadDateTime(timestampToken);
 
     std::time_t _time = std::mktime(&_tm);
 
-    return Image(path, id, userId, static_cast<uint64_t>(_time));
+    return Post(path, id, userId, static_cast<uint64_t>(_time), hashtag);
 }
 
-std::tm Image::parseDateTime(const std::string& dateTime)
+
+std::tm Post::parseDownloadDateTime(const std::string& dateTime)
 {
     // Doesn't work across platform for an unknown reason.
     //    std::stringstream ss(timestampToken);
@@ -129,11 +157,11 @@ std::tm Image::parseDateTime(const std::string& dateTime)
 }
 
 
-std::filesystem::path Image::relativeStorePathForImage(const Image& image)
+std::filesystem::path Post::relativeStorePathForImage(const Post& post)
 {
     std::filesystem::path path = "";
 
-    std::string id = std::to_string(image.id());
+    std::string id = std::to_string(post.id());
 
     if (id.length() <= ID_PATH_DEPTH)
     {
@@ -147,50 +175,50 @@ std::filesystem::path Image::relativeStorePathForImage(const Image& image)
 
     path = path / id;
     path += ".";
-    path += std::to_string(image.userId());
+    path += std::to_string(post.userId());
     path += ".";
-    path += std::to_string(image.timestamp());
-    path += image.path().extension();
+    path += std::to_string(post.timestamp());
+    path += post.path().extension();
 
     return path;
 }
 
 
-const std::string HashTagClient::DEFAULT_INSTALOOTER_PATH = "/usr/local/bin/instaLooter";
-const std::string HashTagClient::FILENAME_TEMPLATE = "{id}.{ownerid}.{datetime}";
+const std::string HashtagClient::DEFAULT_INSTALOOTER_PATH = "/usr/local/bin/instaLooter";
+const std::string HashtagClient::FILENAME_TEMPLATE = "{id}.{ownerid}.{datetime}";
 
 
-HashTagClient::HashTagClient(const std::string& hashtag,
-                             const std::filesystem::path& imageStorePath,
+HashtagClient::HashtagClient(const std::string& hashtag,
+                             const std::filesystem::path& storePath,
                              uint64_t pollingInterval,
                              uint64_t numImagesToDownload,
                              const std::filesystem::path& instaLooterPath):
-    IO::PollingThread(std::bind(&HashTagClient::_loot, this), pollingInterval),
+    IO::PollingThread(std::bind(&HashtagClient::_loot, this), pollingInterval),
     _hashtag(hashtag),
-    _imageStorePath(imageStorePath),
+    _storePath(storePath),
+    _savePath(_storePath / "instagram" / "downloads" / _hashtag),
+    _downloadPath(_savePath / "unsorted"),
     _numImagesToDownload(numImagesToDownload),
     _instaLooterPath(instaLooterPath)
 {
-    // Construct paths.
-    _basePath = _imageStorePath / _hashtag;
-    _downloadPath = _basePath / "downloads";
-
     // Ensure that the paths exist.
     std::filesystem::create_directories(_downloadPath);
 
     // Add file folder extensions.
     _fileExtensionFilter.addExtensions({ "jpg", "jpeg", "gif", "png" });
+
+    start();
 }
 
 
-HashTagClient::~HashTagClient()
+HashtagClient::~HashtagClient()
 {
 }
 
 
-void HashTagClient::_loot()
+void HashtagClient::_loot()
 {
-    ofLogVerbose("HashTagClient::_loot") << "Looting " << _hashtag << " " << _downloadPath;
+    ofLogVerbose("HashtagClient::_loot") << "Looting " << _hashtag << " " << _downloadPath;
 
     std::vector<std::string> args;
 
@@ -216,7 +244,7 @@ void HashTagClient::_loot()
     std::thread processThread([&](){
         std::string outString;
         Poco::StreamCopier::copyToString(istr, outString);
-        ofLogVerbose("HashTagClient::_loot") << "Process Output: " << outString;
+        ofLogVerbose("HashtagClient::_loot") << "Process Output: " << outString;
 
         try
         {
@@ -224,7 +252,7 @@ void HashTagClient::_loot()
         }
         catch (const std::exception& exc)
         {
-            ofLogWarning("HashTagClient::_loot") << "Process Thread: " << exc.what();
+            ofLogWarning("HashtagClient::_loot") << "Process Thread: " << exc.what();
         }
     });
 
@@ -249,7 +277,7 @@ void HashTagClient::_loot()
 
     if (Poco::Process::isRunning(handle))
     {
-        ofLogWarning("HashTagClient::_loot") << "Process timed out, killing.";
+        ofLogWarning("HashtagClient::_loot") << "Process timed out, killing.";
         Poco::Process::kill(handle);
         didKill = true;
     }
@@ -264,60 +292,87 @@ void HashTagClient::_loot()
 
     try
     {
-        ofLogVerbose("HashTagClient::_loot") << "Joining Process ...";
+        ofLogVerbose("HashtagClient::_loot") << "Joining Process ...";
         processThread.join();
     }
     catch (const std::exception& exc)
     {
-        ofLogVerbose("HashTagClient::_loot") << "Exit: " << exc.what();
+        ofLogVerbose("HashtagClient::_loot") << "Exit: " << exc.what();
     }
 
-    ofLogVerbose("HashTagClient::_loot") << "... joined and process exited with code: " << exitCode;
+    ofLogVerbose("HashtagClient::_loot") << "... joined and process exited with code: " << exitCode;
 
     std::vector<std::filesystem::path> paths;
 
     IO::DirectoryUtils::list(_downloadPath, paths, false, &_fileExtensionFilter);
 
-    std::vector<Image> rawImages;
+    std::vector<Post> rawPosts;
 
-    for (const auto& path: paths) rawImages.push_back(Image::fromPath(path));
+/// compare new posts to old posts.
+    // sort / copy new posts
+    // remove old posts
+    // new posts remain as reference for downloader
 
-    std::vector<Image> newImages;
-    std::vector<Image> rawImagesToDelete;
 
-    if (!rawImages.empty())
+    for (const auto& path: paths)
     {
-        // We leave the newest so instaLooter will have a reference point for newer images.
-        for (const auto& rawImage: rawImages)
+        rawPosts.push_back(Post::fromDownloadPath(path));
+    }
+
+
+    std::vector<Post> newPosts;
+    std::vector<Post> rawPostsToDelete;
+
+    if (!rawPosts.empty())
+    {
+        for (const auto& rawPost: rawPosts)
         {
-            std::filesystem::path newPath = _basePath / Image::relativeStorePathForImage(rawImage);
+            std::filesystem::path newPath = _savePath / Post::relativeStorePathForImage(rawPost);
             std::filesystem::create_directories(newPath.parent_path());
 
-            Image newImage(newPath, rawImage.id(), rawImage.userId(), rawImage.timestamp());
+            Post newPost(newPath,
+                         rawPost.id(),
+                         rawPost.userId(),
+                         rawPost.timestamp(),
+                         rawPost.hashtag());
 
-            if (std::filesystem::exists(newPath))
+            bool alreadySaved = false;
+
+            for (const auto& post: _lastPostsSaved)
             {
-                if (std::filesystem::exists(rawImage.path()))
+                if (post.path() == newPath)
                 {
-                    rawImagesToDelete.push_back(rawImage);
+                    alreadySaved = true;
+                    break;
+                }
+            }
+
+
+            if (alreadySaved || std::filesystem::exists(newPost.path()))
+            {
+                if (std::filesystem::exists(rawPost.path()))
+                {
+                    rawPostsToDelete.push_back(rawPost);
                 }
             }
             else
             {
-                std::filesystem::copy(rawImage.path(), newImage.path());
-                std::filesystem::last_write_time(newImage.path(), static_cast<std::time_t>(newImage.timestamp()));
-                newImages.push_back(newImage);
+                std::filesystem::copy(rawPost.path(), newPost.path());
+                std::filesystem::last_write_time(newPost.path(), static_cast<std::time_t>(newPost.timestamp()));
+                newPosts.push_back(newPost);
             }
 
             if (!isRunning()) break;
         }
     }
 
+    _lastPostsSaved = newPosts;
+
     std::size_t cleanedUp = 0;
 
-    if (!newImages.empty() && !didKill)
+    if (!newPosts.empty() && !didKill)
     {
-        for (const auto& rawImage: rawImagesToDelete)
+        for (const auto& rawImage: rawPostsToDelete)
         {
             if (std::filesystem::remove(rawImage.path()))
             {
@@ -326,7 +381,9 @@ void HashTagClient::_loot()
         }
     }
 
-    ofLogNotice("HashTagClient::_loot") << "#" << _hashtag << " New: " << newImages.size() << (didKill ? " [killed process]" : "") << " Old: " << rawImagesToDelete.size() << " Cleaned up: " << cleanedUp;
+    ofLogNotice("HashtagClient::_loot") << "#" << _hashtag << " New: " << newPosts.size() << (didKill ? " [killed process]" : "") << " Old: " << rawPostsToDelete.size() << " Cleaned up: " << cleanedUp;
+
+    for (const auto& post: newPosts) posts.send(post);
 }
 
 

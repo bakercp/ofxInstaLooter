@@ -1,21 +1,13 @@
 {
-  "instalooter_path": "/usr/local/bin/instaLooter",
-  "image_store_path": "store/",
-  "hashtags": [
-    {
-      "hashtag": "saatchiselfie",
-      "polling_interval": 60000,
-      "num_images_to_download": 4000
-    },
-    {
-      "hashtag": "fridaynightselfie",
-      "polling_interval": 60000,
-      "num_images_to_download": 4000
-    },
-    {
-      "hashtag": "selfie",
-      "polling_interval": 5000,
-      "num_images_to_download": 4000
-    }
-  ]
+  "paths": {
+    "image_store_path": "database/"
+  },
+  "instagram": {
+    "instalooter_path": "/Users/bakercp/anaconda/bin/instaLooter",
+    "search": {
+        "hashtag": "me",
+        "polling_interval": 5000,
+        "num_images_to_download": 10
+      }
+  }
 }

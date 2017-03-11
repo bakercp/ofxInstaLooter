@@ -13,25 +13,30 @@
 #include "ofFileUtils.h"
 #include "ofx/IO/PollingThread.h"
 #include "ofx/IO/FileExtensionFilter.h"
+#include "ofx/IO/ThreadChannel.h"
 
 
 namespace ofx {
 namespace InstaLooter {
 
 
-/// \brief Create an InstaLooter Image.
-class Image
+/// \brief Create an InstaLooter Post.
+class Post
 {
 public:
+    Post();
+
     /// \brief Create a image from paramaters.
     /// \param path The path to the image.
     /// \param id The image id.
     /// \param userId The user id.
     /// \param timestamp The timestamp of the image.
-    Image(const std::filesystem::path& path,
-          uint64_t id,
-          uint64_t userId,
-          uint64_t timestamp);
+    /// \param hashtag The hashtag that yeilded the image.
+    Post(const std::filesystem::path& path,
+         uint64_t id,
+         uint64_t userId,
+         uint64_t timestamp,
+         const std::string& hashtags);
 
     /// \returns the path to the image.
     std::filesystem::path path() const;
@@ -45,18 +50,24 @@ public:
     /// \returns the parsed timestamp.
     uint64_t timestamp() const;
 
+    /// \returns the hashtag that that yeilded the image.
+    std::string hashtag() const;
+
+    bool isDuplicate() const;
+
+    void setIsDuplicate(bool duplicate);
+
     /// \brief Create an Image by parsing a filename.
     /// \throws Poco::InvalidArgumentException if unable to parse.
     /// \returns the image or throws an Exception.
-    static Image fromPath(const std::filesystem::path& path);
+    static Post fromDownloadPath(const std::filesystem::path& path);
 
     /// \throws Poco::InvalidArgumentException if invalid syntax.
-    static std::tm parseDateTime(const std::string& dateTime);
+    static std::tm parseDownloadDateTime(const std::string& dateTime);
 
     /// \throws Poco::InvalidArgumentException if unable to parse.
-    /// \returns a store path for the image, given the baseStorePath.
-    static std::filesystem::path relativeStorePathForImage(const Image& image);
-
+    /// \returns a store path for the post, given the baseStorePath.
+    static std::filesystem::path relativeStorePathForImage(const Post& post);
 
     enum
     {
@@ -64,23 +75,36 @@ public:
     };
 
 private:
+    bool _isDuplicate = false;
     std::filesystem::path _path;
     uint64_t _id = 0;
     uint64_t _userId = 0;
     uint64_t _timestamp = 0;
+    std::string _hashtag;
 
 };
 
-class HashTagClient: public IO::PollingThread
+///
+/// Images are saved at
+///
+/// storePath / instagram / hashtag / ...
+///
+/// Images are downloaded to
+///
+/// storePath / instagram / hashtag / downloads
+
+class HashtagClient: public IO::PollingThread
 {
 public:
-    HashTagClient(const std::string& hashtag,
-                  const std::filesystem::path& imageStorePath,
+    HashtagClient(const std::string& hashtag,
+                  const std::filesystem::path& storePath,
                   uint64_t pollingInterval = DEFAULT_POLLING_INTERVAL,
                   uint64_t numImagesToDownload = DEFAULT_NUM_IMAGES_TO_DOWNLOAD,
                   const std::filesystem::path& instaLooterPath = DEFAULT_INSTALOOTER_PATH);
 
-    virtual ~HashTagClient();
+    virtual ~HashtagClient();
+
+    IO::ThreadChannel<Post> posts;
 
     enum
     {
@@ -108,8 +132,8 @@ private:
 
     std::string _hashtag;
 
-    std::filesystem::path _imageStorePath;
-    std::filesystem::path _basePath;
+    std::filesystem::path _storePath;
+    std::filesystem::path _savePath;
     std::filesystem::path _downloadPath;
     std::filesystem::path _instaLooterPath;
 
@@ -118,6 +142,9 @@ private:
     uint64_t _processTimeout = DEFAULT_PROCESS_TIMEOUT;
 
     IO::FileExtensionFilter _fileExtensionFilter;
+
+    std::vector<Post> _lastPostsSaved;
+
 
 };
 
