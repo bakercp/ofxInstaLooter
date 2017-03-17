@@ -34,6 +34,9 @@ void HashtagClientManager::setup(const ofJson& paths, const ofJson& settings)
 
     auto instaLooterPath = ofToDataPath(settings["instalooter_path"], true);
 
+    std::string username = settings["credentials"]["username"];
+    std::string password = settings["credentials"]["password"];
+
     for (const auto& search: settings["searches"])
     {
         std::string hashtag = search["hashtag"];
@@ -41,6 +44,8 @@ void HashtagClientManager::setup(const ofJson& paths, const ofJson& settings)
         uint64_t numImagesToDownload = search["num_images_to_download"];
 
         auto client = std::make_unique<HashtagClient>(hashtag,
+                                                      username,
+                                                      password,
                                                       _storePath,
                                                       interval,
                                                       numImagesToDownload,

@@ -18,7 +18,7 @@ void ofApp::setup()
 
     ofJson settings = ofLoadJson("settings.json");
 
-    manager.setup(settings["paths"], settings["instagram"]);
+    manager.setup(settings["paths"], settings["sources"]["instagram"]);
 
 }
 

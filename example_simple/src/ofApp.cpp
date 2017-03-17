@@ -19,16 +19,24 @@ void ofApp::setup()
     ofJson settings = ofLoadJson("settings.json");
 
     const auto& paths = settings["paths"];
-    const auto& instagram = settings["instagram"];
+    const auto& instagram = settings["sources"]["instagram"];
 
     std::filesystem::path imageStorePath = ofToDataPath(paths["image_store_path"], true);
     std::filesystem::path instaLooterPath = ofToDataPath(instagram["instalooter_path"], true);
 
-    std::string hashtag = instagram["search"]["hashtag"];
-    uint64_t interval = instagram["search"]["polling_interval"];
-    uint64_t numImagesToDownload = instagram["search"]["num_images_to_download"];
+    std::string username = instagram["credentials"]["username"];
+    std::string password = instagram["credentials"]["password"];
+
+    // Get the 0th search.
+    const auto& search = instagram["searches"][0];
+
+    std::string hashtag = search["hashtag"];
+    uint64_t interval = search["polling_interval"];
+    uint64_t numImagesToDownload = search["num_images_to_download"];
 
     client = std::make_unique<ofxInstaLooter::HashtagClient>(hashtag,
+                                                             username,
+                                                             password,
                                                              imageStorePath,
                                                              interval,
                                                              numImagesToDownload,

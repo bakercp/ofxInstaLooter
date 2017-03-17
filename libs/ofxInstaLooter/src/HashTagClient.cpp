@@ -209,12 +209,16 @@ const std::string HashtagClient::FILENAME_TEMPLATE = "{id}.{ownerid}.{datetime}"
 
 
 HashtagClient::HashtagClient(const std::string& hashtag,
+                             const std::string& username,
+                             const std::string& password,
                              const std::filesystem::path& storePath,
                              uint64_t pollingInterval,
                              uint64_t numImagesToDownload,
                              const std::filesystem::path& instaLooterPath):
     IO::PollingThread(std::bind(&HashtagClient::_loot, this), pollingInterval),
     _hashtag(hashtag),
+    _username(username),
+    _password(password),
     _storePath(storePath),
     _savePath(_storePath / "instagram" / "downloads" / _hashtag),
     _downloadPath(_savePath / "unsorted"),
@@ -236,6 +240,29 @@ HashtagClient::~HashtagClient()
 }
 
 
+void HashtagClient::setUsername(const std::string& username)
+{
+    _username = username;
+}
+
+
+std::string HashtagClient::getUsername() const
+{
+    return _username;
+}
+
+void HashtagClient::setPassword(const std::string& password)
+{
+    _password = password;
+}
+
+
+std::string HashtagClient::getPassword() const
+{
+    return _password;
+}
+
+
 void HashtagClient::_loot()
 {
     ofLogVerbose("HashtagClient::_loot") << "Looting " << _hashtag << " " << _downloadPath;
@@ -245,10 +272,17 @@ void HashtagClient::_loot()
     args.push_back("hashtag");
     args.push_back(_hashtag);
     args.push_back(_downloadPath.string());
-    args.push_back("--quiet");
+    if (_quiet)
+    {
+        args.push_back("--quiet");
+    }
     args.push_back("--new");
     args.push_back("-n " + std::to_string(_numImagesToDownload));
     args.push_back("-T" + FILENAME_TEMPLATE);
+    if (!_username.empty() || !_password.empty())
+    {
+        args.push_back("-c" + _username + ":" + _password);
+    }
 
     Poco::Pipe outPipe;
 
@@ -328,17 +362,15 @@ void HashtagClient::_loot()
 
     std::vector<Post> rawPosts;
 
-/// compare new posts to old posts.
+    // compare new posts to old posts.
     // sort / copy new posts
     // remove old posts
     // new posts remain as reference for downloader
-
 
     for (const auto& path: paths)
     {
         rawPosts.push_back(Post::fromDownloadPath(path));
     }
-
 
     std::vector<Post> newPosts;
     std::vector<Post> rawPostsToDelete;

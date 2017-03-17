@@ -8,10 +8,16 @@
         "username": "USERNAME",
         "password": "PASSWORD"
       },
+      "manager_polling_interval": 1000,
       "instalooter_path": "/Users/bakercp/anaconda/bin/instaLooter",
       "searches": [
         {
           "hashtag": "me",
+          "polling_interval": 5000,
+          "num_images_to_download": 10
+        },
+        {
+          "hashtag": "selfie",
           "polling_interval": 5000,
           "num_images_to_download": 10
         }

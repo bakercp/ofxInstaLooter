@@ -111,12 +111,20 @@ class HashtagClient: public IO::PollingThread
 {
 public:
     HashtagClient(const std::string& hashtag,
+                  const std::string& username,
+                  const std::string& password,
                   const std::filesystem::path& storePath,
                   uint64_t pollingInterval = DEFAULT_POLLING_INTERVAL,
                   uint64_t numImagesToDownload = DEFAULT_NUM_IMAGES_TO_DOWNLOAD,
                   const std::filesystem::path& instaLooterPath = DEFAULT_INSTALOOTER_PATH);
 
     virtual ~HashtagClient();
+
+    void setUsername(const std::string& username);
+    std::string getUsername() const;
+
+    void setPassword(const std::string& password);
+    std::string getPassword() const;
 
     IO::ThreadChannel<Post> posts;
 
@@ -143,6 +151,11 @@ public:
 
 private:
     void _loot();
+
+    bool _quiet = false;
+
+    std::string _username;
+    std::string _password;
 
     std::string _hashtag;
 
