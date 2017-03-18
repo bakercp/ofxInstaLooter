@@ -86,7 +86,7 @@ public:
         ID_PATH_DEPTH = 6
     };
 
-private:
+//private:
     std::filesystem::path _path;
 
     uint64_t _id = 0;

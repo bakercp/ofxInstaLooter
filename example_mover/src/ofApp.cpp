@@ -15,7 +15,7 @@ void ofApp::setup()
     using ofx::InstaLooter::Post;
 
     std::filesystem::path unsorted = "/SelfieStore/data/database/instagram_unsorted/";
-    std::filesystem::path destination = "/home/bakercp/SelfieStore/database/instagram/";
+    std::filesystem::path _savePath = "/home/bakercp/SelfieStore/database/instagram/";
 
 
     std::filesystem::recursive_directory_iterator dir(unsorted), end;
@@ -27,89 +27,86 @@ void ofApp::setup()
             std::cout << "skipping " << dir->path().string() << std::endl;
             dir.no_push(); // don't recurse into this directory.
         }
-	else if (!std::filesystem::is_directory(dir->path()))
-	{
-        Post post = Post::fromOldSortedPath(dir->path());
+        else if (!std::filesystem::is_directory(dir->path()))
+        {
+            Post post = Post::fromOldSortedPath(dir->path());
 
-        std::cout << dir->path().string() << " > " << *post.hashtags().begin() << " " << post.id() << " " << post.userId() << " " << post.timestamp() << std::endl;
+            std::filesystem::path newPath = _savePath / Post::relativeStorePathForImage(post);
+
+            Post newPost(newPath,
+                         post.id(),
+                         post.userId(),
+                         post.timestamp(),
+                         post.width(),
+                         post.height(),
+                         post.hashtags());
+
+            std::filesystem::path jsonPath = newPath;
+            jsonPath.replace_extension(".json.gz");
+
+            if (!std::filesystem::exists(newPath))
+            {
+                ofJson newPostJson;
+
+                if (std::filesystem::exists(jsonPath))
+                {
+                    ofLogError("HashtagClientManager::_process") << "No image, but was json - overwriting.";
+                }
+
+                newPostJson = Post::toJSON(newPost);
+
+                std::filesystem::create_directories(newPath.parent_path());
+                std::filesystem::copy(post.path(), newPath);
+
+                ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(newPost));
 
 
-	}
-//        std::filesystem::path newPath = _savePath / Post::relativeStorePathForImage(post);
+            }
+            else
+            {
+                ofJson existingPostJson = ofLoadJson(jsonPath);
+
+                if (existingPostJson.empty())
+                {
+                    ofLogError("HashtagClientManager::_process") << "Image, but invalid json, saving afterall.";
+                    ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(newPost));
+                }
+                else
+                {
+                    try
+                    {
+                        Post existingPost = Post::fromJSON(existingPostJson);
+
+                        auto oldHashtags = existingPost.hashtags();
+                        auto oldNumHashtags = oldHashtags.size();
+
+                        auto newHashtags = newPost.hashtags();
+
+                        oldHashtags.insert(newHashtags.begin(),
+                                           newHashtags.end());
+
+                        if (oldNumHashtags != oldHashtags.size())
+                        {
+                            existingPost._hashtags = oldHashtags;
+                            ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(existingPost));
+                        }
+                        else
+                        {
+                            // skipping
+                        }
+                    }
+                    catch (const std::exception& e)
+                    {
+                        ofLogError("HashtagClientManager::_process") << "Unable to load exisitng post json.";
+                        ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(newPost));
+                    }
+                }
+            }
+        }
+
+        }
 
 
-
-//
-//        Post newPost(newPath,
-//                     post.id(),
-//                     post.userId(),
-//                     post.timestamp(),
-//                     post.width(),
-//                     post.height(),
-//                     post.hashtags());
-//
-//        std::filesystem::path jsonPath = newPath;
-//        jsonPath.replace_extension(".json");
-//
-//        if (!std::filesystem::exists(newPath))
-//        {
-//            ofJson newPostJson;
-//
-//            if (std::filesystem::exists(jsonPath))
-//            {
-//                ofLogError("HashtagClientManager::_process") << "No image, but was json - overwriting.";
-//            }
-//
-//            newPostJson = Post::toJSON(newPost);
-//
-//            std::filesystem::create_directories(newPath.parent_path());
-//            std::filesystem::rename(post.path(), newPath);
-//            ofSavePrettyJson(jsonPath, Post::toJSON(newPost));
-//            posts.send(newPost);
-//        }
-//        else
-//        {
-//            ofJson existingPostJson = ofLoadJson(jsonPath);
-//
-//            if (existingPostJson.empty())
-//            {
-//                ofLogError("HashtagClientManager::_process") << "Image, but invalid json, saving afterall.";
-//                ofSavePrettyJson(jsonPath, Post::toJSON(newPost));
-//                updatedPosts.send(newPost);
-//            }
-//            else
-//            {
-//                try
-//                {
-//                    Post existingPost = Post::fromJSON(existingPostJson);
-//
-//                    auto oldHashtags = existingPost.hashtags();
-//                    auto oldNumHashtags = oldHashtags.size();
-//
-//                    auto newHashtags = newPost.hashtags();
-//
-//                    oldHashtags.insert(newHashtags.begin(),
-//                                       newHashtags.end());
-//
-//                    if (oldNumHashtags != oldHashtags.size())
-//                    {
-//                        existingPost._hashtags = oldHashtags;
-//                        ofSavePrettyJson(jsonPath, Post::toJSON(existingPost));
-//                        updatedPosts.send(existingPost);
-//                    }
-//                    else
-//                    {
-//                        // skipping
-//                    }
-//                }
-//                catch (const std::exception& e)
-//                {
-//                    ofLogError("HashtagClientManager::_process") << "Unable to load exisitng post json.";
-//                    ofSavePrettyJson(jsonPath, Post::toJSON(newPost));
-//                    updatedPosts.send(newPost);
-//                }
-//            }
-//        }
 
         ++dir;
     }

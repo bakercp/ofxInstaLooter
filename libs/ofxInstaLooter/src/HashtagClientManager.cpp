@@ -6,6 +6,7 @@
 
 
 #include "ofx/InstaLooter/HashtagClientManager.h"
+#include "ofx/IO/JSONUtils.h"
 
 
 namespace ofx {
@@ -77,7 +78,7 @@ void HashtagClientManager::_process()
                          post.hashtags());
 
             std::filesystem::path jsonPath = newPath;
-            jsonPath.replace_extension(".json");
+            jsonPath.replace_extension(".json.gz");
 
             if (!std::filesystem::exists(newPath))
             {
@@ -92,7 +93,9 @@ void HashtagClientManager::_process()
 
                 std::filesystem::create_directories(newPath.parent_path());
                 std::filesystem::rename(post.path(), newPath);
-                ofSavePrettyJson(jsonPath, Post::toJSON(newPost));
+
+                ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(newPost));
+
                 posts.send(newPost);
             }
             else

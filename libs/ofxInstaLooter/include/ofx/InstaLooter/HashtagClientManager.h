@@ -29,7 +29,6 @@ public:
     IO::ThreadChannel<Post> posts;
     IO::ThreadChannel<Post> updatedPosts;
 
-
 private:
     void _process();
 
