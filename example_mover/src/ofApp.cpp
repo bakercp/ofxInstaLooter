@@ -18,36 +18,23 @@ void ofApp::setup()
     std::filesystem::path destination = "/home/bakercp/SelfieStore/database/instagram/";
 
 
-    std::filesystem::recursive_directory_iterator dir(destination), end;
+    std::filesystem::recursive_directory_iterator dir(unsorted), end;
 
     while (dir != end)
     {
-        // make sure we don't recurse into certain directories
-        // note: maybe check for is_directory() here as well...
         if (std::filesystem::is_directory(dir->path()) && dir->path().filename() == "downloads")
         {
             std::cout << "skipping " << dir->path().string() << std::endl;
             dir.no_push(); // don't recurse into this directory.
         }
-
-        // do other stuff here.
-
-        std::cout << ".";
-
-
-
-
-
-
-//        if (
-//
-//
-//
-//
-//
-//
-//
+	else if (!std::filesystem::is_directory(dir->path()))
+	{
+		std::cout << dir->path().string() << std::endl;
+	}
 //        std::filesystem::path newPath = _savePath / Post::relativeStorePathForImage(post);
+
+
+
 //
 //        Post newPost(newPath,
 //                     post.id(),
