@@ -6,12 +6,10 @@ _*/
 
 raw/
 
-exampl*/.compiler*
-exampl*/config.make
-exampl*/Makefile
-exampl*/Project.xcconfig
-exampl*/*.xcodeproj
-exampl*/*.plist
+.compiler*
+Project.xcconfig
+*.xcodeproj
+*.plist
 
 *.sln
 *.vcxproj
