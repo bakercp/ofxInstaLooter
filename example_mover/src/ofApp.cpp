@@ -32,7 +32,7 @@ void ofApp::setup()
 
         // do other stuff here.
 
-
+        std::cout << ".";
 
 
 
