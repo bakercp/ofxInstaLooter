@@ -29,7 +29,11 @@ void ofApp::setup()
         }
 	else if (!std::filesystem::is_directory(dir->path()))
 	{
-		std::cout << dir->path().string() << std::endl;
+        Post post = Post::fromOldSortedPath(dir->path());
+
+        std::cout << dir->path().string() << " > " << *post.hashtags().begin() << " " << post.id() << " " << post.userId() << " " << post.timestamp() << std::endl;
+
+
 	}
 //        std::filesystem::path newPath = _savePath / Post::relativeStorePathForImage(post);
 

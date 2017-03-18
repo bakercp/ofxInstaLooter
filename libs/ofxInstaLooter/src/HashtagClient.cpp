@@ -94,6 +94,43 @@ std::set<std::string> Post::hashtags() const
 //    _isDuplicate = isDuplicate;
 //}
 
+Post Post::fromOldSortedPath(const std::filesystem::path& path)
+{
+    auto p = path;
+
+    for (auto i = 0; i < ID_PATH_DEPTH; ++i) p = p.parent_path();
+
+    std::string hashtag = p.parent_path().filename().string();
+
+    auto filename = path.filename();
+    auto tokens = ofSplitString(filename.string(), ".");
+
+    if (tokens.size() != 4)
+    {
+        throw Poco::InvalidArgumentException("Invalid path: " + filename.string());
+    }
+
+    auto idToken = tokens[0];
+    auto userIdToken = tokens[1];
+    auto timestampToken = tokens[2];
+
+    uint64_t id = std::stoull(idToken);
+    uint64_t userId = std::stoull(userIdToken);
+    uint64_t time = std::stoull(timestampToken);
+
+    uint64_t width = 0;
+    uint64_t height = 0;
+
+    return Post(path,
+                id,
+                userId,
+                time,
+                width,
+                height,
+                { hashtag });
+}
+
+
 
 Post Post::fromDownloadPath(const std::filesystem::path& path)
 {

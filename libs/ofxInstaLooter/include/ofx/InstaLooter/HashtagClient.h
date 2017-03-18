@@ -64,6 +64,8 @@ public:
     /// \returns the hashtag that that yielded the image.
     std::set<std::string> hashtags() const;
 
+    static Post fromOldSortedPath(const std::filesystem::path& path);
+
     /// \brief Create an Image by parsing a filename.
     /// \throws Poco::InvalidArgumentException if unable to parse.
     /// \returns the image or throws an Exception.
