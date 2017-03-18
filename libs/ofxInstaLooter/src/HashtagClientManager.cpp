@@ -100,9 +100,9 @@ void HashtagClientManager::_process()
             }
             else
             {
-                ofJson existingPostJson = ofLoadJson(jsonPath);
+                ofJson existingPostJson;
 
-                if (existingPostJson.empty())
+                if (ofx::IO::JSONUtils::loadJSON(jsonPath, existingPostJson))
                 {
                     ofLogError("HashtagClientManager::_process") << "Image, but invalid json, saving afterall.";
                     ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(newPost));
