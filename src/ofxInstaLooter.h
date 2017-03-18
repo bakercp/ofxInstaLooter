@@ -8,8 +8,8 @@
 #pragma once
 
 
-#include "ofx/InstaLooter/HashtagClient.h"
-#include "ofx/InstaLooter/HashtagClientManager.h"
+#include "ofx/InstaLooter/HashTagClient.h"
+#include "ofx/InstaLooter/HashTagClientManager.h"
 
 
 namespace ofxInstaLooter = ofx::InstaLooter;

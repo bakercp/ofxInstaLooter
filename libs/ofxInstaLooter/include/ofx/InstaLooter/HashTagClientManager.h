@@ -9,7 +9,7 @@
 
 
 #include "ofJson.h"
-#include "ofx/InstaLooter/HashtagClient.h"
+#include "ofx/InstaLooter/HashTagClient.h"
 #include "ofx/IO/Thread.h"
 
 
