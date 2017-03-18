@@ -30,14 +30,14 @@ Post::Post(const std::filesystem::path& path,
            uint64_t timestamp,
            uint64_t width,
            uint64_t height,
-           const std::string& hashtag):
+           const std::set<std::string>& hashtags):
     _path(path),
     _id(id),
     _userId(userId),
     _timestamp(timestamp),
     _width(width),
     _height(height),
-    _hashtag(hashtag)
+    _hashtags(hashtags)
 {
 }
 
@@ -78,22 +78,21 @@ uint64_t Post::height() const
 }
 
 
-std::string Post::hashtag() const
+std::set<std::string> Post::hashtags() const
 {
-    return _hashtag;
+    return _hashtags;
 }
 
+//bool Post::isDuplicate() const
+//{
+//    return _isDuplicate;
+//}
 
-bool Post::isDuplicate() const
-{
-    return _isDuplicate;
-}
 
-
-void Post::setIsDuplicate(bool isDuplicate)
-{
-    _isDuplicate = isDuplicate;
-}
+//void Post::setIsDuplicate(bool isDuplicate)
+//{
+//    _isDuplicate = isDuplicate;
+//}
 
 
 Post Post::fromDownloadPath(const std::filesystem::path& path)
@@ -122,7 +121,13 @@ Post Post::fromDownloadPath(const std::filesystem::path& path)
     uint64_t width = 0;
     uint64_t height = 0;
 
-    return Post(path, id, userId, static_cast<uint64_t>(_time), width, height, hashtag);
+    return Post(path,
+                id,
+                userId,
+                static_cast<uint64_t>(_time),
+                width,
+                height,
+                { hashtag });
 }
 
 
@@ -201,6 +206,34 @@ std::filesystem::path Post::relativeStorePathForImage(const Post& post)
     path += post.path().extension();
 
     return path;
+}
+
+
+ofJson Post::toJSON(const Post& post)
+{
+    ofJson json;
+    json["path"] = post._path.string();
+    json["id"] = post._id;
+    json["user_id"] = post._userId;
+    json["timestamp"] = post._timestamp;
+    json["width"] = post._width;
+    json["height"] = post._height;
+    json["hashtags"] = post._hashtags;
+    return json;
+}
+
+
+Post Post::fromJSON(const ofJson& json)
+{
+    Post post;
+    post._path = std::filesystem::path(json["path"].get<std::string>());
+    post._id = json["id"];
+    post._userId = json["user_id"];
+    post._timestamp = json["timestamp"];
+    post._width = json["width"];
+    post._height = json["height"];
+    post._hashtags = json["hashtags"].get<std::set<std::string>>();
+    return post;
 }
 
 

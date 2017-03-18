@@ -27,6 +27,8 @@ public:
 
     /// \brief New posts.
     IO::ThreadChannel<Post> posts;
+    IO::ThreadChannel<Post> updatedPosts;
+
 
 private:
     void _process();

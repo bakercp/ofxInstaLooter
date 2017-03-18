@@ -10,6 +10,7 @@
 
 #include <string>
 #include <chrono>
+#include "ofJson.h"
 #include "ofFileUtils.h"
 #include "ofx/IO/PollingThread.h"
 #include "ofx/IO/FileExtensionFilter.h"
@@ -33,14 +34,14 @@ public:
     /// \param timestamp The timestamp of the image.
     /// \param width Image width.
     /// \param height Image height.
-    /// \param hashtag The hashtag that yeilded the image.
+    /// \param hashtags The hashtags associated with the image.
     Post(const std::filesystem::path& path,
          uint64_t id,
          uint64_t userId,
          uint64_t timestamp,
          uint64_t width,
          uint64_t height,
-         const std::string& hashtag);
+         const std::set<std::string>& hashtags);
 
     /// \returns the path to the image.
     std::filesystem::path path() const;
@@ -61,11 +62,7 @@ public:
     uint64_t height() const;
 
     /// \returns the hashtag that that yielded the image.
-    std::string hashtag() const;
-
-    bool isDuplicate() const;
-
-    void setIsDuplicate(bool duplicate);
+    std::set<std::string> hashtags() const;
 
     /// \brief Create an Image by parsing a filename.
     /// \throws Poco::InvalidArgumentException if unable to parse.
@@ -79,13 +76,15 @@ public:
     /// \returns a store path for the post, given the baseStorePath.
     static std::filesystem::path relativeStorePathForImage(const Post& post);
 
+    static ofJson toJSON(const Post& post);
+    static Post fromJSON(const ofJson& json);
+
     enum
     {
         ID_PATH_DEPTH = 6
     };
 
 private:
-    bool _isDuplicate = false;
     std::filesystem::path _path;
 
     uint64_t _id = 0;
@@ -93,12 +92,13 @@ private:
     uint64_t _timestamp = 0;
     uint64_t _width = 0;
     uint64_t _height = 0;
-    std::string _hashtag;
+    std::set<std::string> _hashtags;
 
     friend class HashtagClient;
+    friend class HashtagClientManager;
 };
 
-///
+
 /// Images are saved at
 ///
 /// storePath / instagram / hashtag / ...

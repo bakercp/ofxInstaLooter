@@ -74,21 +74,70 @@ void HashtagClientManager::_process()
                          post.timestamp(),
                          post.width(),
                          post.height(),
-                         post.hashtag());
+                         post.hashtags());
+
+            std::filesystem::path jsonPath = newPath;
+            jsonPath.replace_extension(".json");
 
             if (!std::filesystem::exists(newPath))
             {
+                ofJson newPostJson;
+
+                if (std::filesystem::exists(jsonPath))
+                {
+                    ofLogError("HashtagClientManager::_process") << "No image, but was json - overwriting.";
+                }
+
+                newPostJson = Post::toJSON(newPost);
+
                 std::filesystem::create_directories(newPath.parent_path());
                 std::filesystem::rename(post.path(), newPath);
-                newPost.setIsDuplicate(false);
+                ofSavePrettyJson(jsonPath, Post::toJSON(newPost));
+                posts.send(newPost);
             }
             else
             {
-                std::filesystem::remove(post.path());
-                newPost.setIsDuplicate(true);
-            }
+                ofJson existingPostJson = ofLoadJson(jsonPath);
 
-            posts.send(newPost);
+                if (existingPostJson.empty())
+                {
+                    ofLogError("HashtagClientManager::_process") << "Image, but invalid json, saving afterall.";
+                    ofSavePrettyJson(jsonPath, Post::toJSON(newPost));
+                    updatedPosts.send(newPost);
+                }
+                else
+                {
+                    try
+                    {
+                        Post existingPost = Post::fromJSON(existingPostJson);
+
+                        auto oldHashtags = existingPost.hashtags();
+                        auto oldNumHashtags = oldHashtags.size();
+
+                        auto newHashtags = newPost.hashtags();
+
+                        oldHashtags.insert(newHashtags.begin(),
+                                           newHashtags.end());
+
+                        if (oldNumHashtags != oldHashtags.size())
+                        {
+                            existingPost._hashtags = oldHashtags;
+                            ofSavePrettyJson(jsonPath, Post::toJSON(existingPost));
+                            updatedPosts.send(existingPost);
+                        }
+                        else
+                        {
+                            // skipping
+                        }
+                    }
+                    catch (const std::exception& e)
+                    {
+                        ofLogError("HashtagClientManager::_process") << "Unable to load exisitng post json.";
+                        ofSavePrettyJson(jsonPath, Post::toJSON(newPost));
+                        updatedPosts.send(newPost);
+                    }
+                }
+            }
         }
     }
 }
