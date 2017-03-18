@@ -105,7 +105,7 @@ void HashtagClientManager::_process()
                 if (existingPostJson.empty())
                 {
                     ofLogError("HashtagClientManager::_process") << "Image, but invalid json, saving afterall.";
-                    ofSavePrettyJson(jsonPath, Post::toJSON(newPost));
+                    ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(newPost));
                     updatedPosts.send(newPost);
                 }
                 else
@@ -125,7 +125,7 @@ void HashtagClientManager::_process()
                         if (oldNumHashtags != oldHashtags.size())
                         {
                             existingPost._hashtags = oldHashtags;
-                            ofSavePrettyJson(jsonPath, Post::toJSON(existingPost));
+                            ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(existingPost));
                             updatedPosts.send(existingPost);
                         }
                         else
@@ -136,7 +136,7 @@ void HashtagClientManager::_process()
                     catch (const std::exception& e)
                     {
                         ofLogError("HashtagClientManager::_process") << "Unable to load exisitng post json.";
-                        ofSavePrettyJson(jsonPath, Post::toJSON(newPost));
+                        ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(newPost));
                         updatedPosts.send(newPost);
                     }
                 }
