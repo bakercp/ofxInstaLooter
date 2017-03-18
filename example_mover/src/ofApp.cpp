@@ -58,6 +58,16 @@ void ofApp::setup()
                 std::filesystem::create_directories(newPath.parent_path());
                 std::filesystem::copy(post.path(), newPath);
 
+                std::filesystem::last_write_time(newPost.path(), static_cast<std::time_t>(newPost.timestamp()));
+
+                ofx::IO::ImageUtils::ImageHeader header;
+
+                if (ofx::IO::ImageUtils::loadHeader(header, newPost.path()))
+                {
+                    newPost._width = header.width;
+                    newPost._height = header.height;
+                }
+
                 ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(newPost));
 
             }
