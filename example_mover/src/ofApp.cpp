@@ -60,7 +60,6 @@ void ofApp::setup()
 
                 ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(newPost));
 
-
             }
             else
             {
@@ -103,10 +102,6 @@ void ofApp::setup()
                 }
             }
         }
-
-        }
-
-
 
         ++dir;
     }
