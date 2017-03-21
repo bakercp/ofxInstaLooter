@@ -30,11 +30,12 @@ void ofApp::setup()
             {
                 try
                 {
+                    std::unordered_map<uint64_t, std::vector<std::filesystem::path>> pathMap;
+
                     std::filesystem::directory_iterator iter(path), end;
 
                     while (iter != end)
                     {
-                        std::map<uint64_t, std::vector<std::filesystem::path>> paths;
 
                         std::string extension = std::filesystem::extension(*iter);
                         std::string basename = std::filesystem::basename(*iter);
@@ -42,12 +43,29 @@ void ofApp::setup()
 
                         if (basename.size() > 0 && basename[0] != '.' && extension != ".gz" && extension != ".json")
                         {
-                            std::string id = basename.substr(0, basename.find("."));
+                            std::string id_str = basename.substr(0, basename.find("."));
 
-                            ofLogNotice() << ">" << id << ">" << iter->path().filename().string();
+                            if (id_str.length() > 0)
+                            {
+                                uint64_t id = std::stoull(id_str);
+                                pathMap[id].push_back(iter->path());
+                            }
                         }
 
                         ++iter;
+                    }
+
+                    for (auto& entry: pathMap)
+                    {
+                        if (entry.second.size() > 1)
+                        {
+                            ofLogNotice() << ">" << entry.first << "> Merging.";
+
+                            for (auto& p: entry.second)
+                            {
+                                ofLogNotice() << "      >" << std::filesystem::basename(p);
+                            }
+                        }
                     }
 
                 }
