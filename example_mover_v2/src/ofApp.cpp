@@ -59,12 +59,15 @@ void ofApp::setup()
                     {
                         if (entry.second.size() > 1)
                         {
-                            ofLogNotice() << ">" << entry.first << "> Merging.";
+                            std::stringstream ss;
+                            ss << "Merging:" << std::endl;
 
                             for (auto& p: entry.second)
                             {
-                                ofLogNotice() << "      >" << std::filesystem::basename(p);
+                                ss << "      >" << std::filesystem::basename(p) << std::endl;
                             }
+
+                            ofLogNotice() << ss.str();
                         }
                     }
 
