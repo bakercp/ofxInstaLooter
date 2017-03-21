@@ -30,18 +30,21 @@ void ofApp::setup()
             {
                 try
                 {
-                    std::map<uint64_t, std::vector<std::filesystem::path>> paths;
-
                     std::filesystem::directory_iterator iter(path), end;
 
                     while (iter != end)
                     {
+                        std::map<uint64_t, std::vector<std::filesystem::path>> paths;
+
                         std::string extension = std::filesystem::extension(*iter);
                         std::string basename = std::filesystem::basename(*iter);
 
+
                         if (basename.size() > 0 && basename[0] != '.' && extension != ".gz" && extension != ".json")
                         {
-                            ofLogNotice() << ">" << iter->path().filename().string();
+                            std::string id = basename.substr(0, basename.find("."));
+
+                            ofLogNotice() << ">" << id << ">" << iter->path().filename().string();
                         }
 
                         ++iter;
