@@ -14,10 +14,13 @@ void ofApp::setup()
     ofSetLoggerChannel(std::make_shared<ofxIO::ThreadsafeConsoleLoggerChannel>());
 
 
-    for (auto line: ofBufferFromFile("folders.txt").getLines()) paths.send(line);
+   auto buffer = ofBufferFromFile("folders.txt");
+   auto lines = buffer.getLines();
+   
 
+    for (auto line: lines) paths.send(line);
 
-    std::size_t numThreads = 8;
+    std::size_t numThreads = 16;
 
     for (std::size_t i = 0; i < numThreads; ++i)
     {
@@ -53,6 +56,8 @@ void ofApp::setup()
             }
         }));
     }
+
+cout << "hhh" << endl;
 
     // ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(existingPost));
 }
