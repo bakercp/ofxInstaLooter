@@ -18,13 +18,16 @@ void ofApp::setup()
    auto lines = buffer.getLines();
    
 
-    for (auto line: lines) paths.send(line);
+    for (auto line: lines) paths.send(ofToDataPath(line, true));
 
-    std::size_t numThreads = 16;
+    std::size_t numThreads = 1;
 
     for (std::size_t i = 0; i < numThreads; ++i)
     {
         threads.emplace_back(std::thread([&](){
+            std::set<std::string> invalidHashtags = { "/" };
+
+
             std::filesystem::path path;
             while (paths.receive(path))
             {
@@ -36,10 +39,8 @@ void ofApp::setup()
 
                     while (iter != end)
                     {
-
                         std::string extension = std::filesystem::extension(*iter);
                         std::string basename = std::filesystem::basename(*iter);
-
 
                         if (basename.size() > 0 && basename[0] != '.' && extension != ".gz" && extension != ".json")
                         {
@@ -60,7 +61,7 @@ void ofApp::setup()
                         if (entry.second.size() > 1)
                         {
                             std::stringstream ss;
-                            ss << "Merging:" << std::endl;
+                            ss << "Merging:" << entry.first << std::endl;
 
                             std::set<std::string> hashtags;
 
@@ -72,6 +73,8 @@ void ofApp::setup()
 
                                 jsonPath = jsonPath.replace_extension(".json.gz");
 
+                                ss << "    " << jsonPath << " ";
+
                                 ofJson json;
 
                                 if (ofxIO::JSONUtils::loadJSON(jsonPath, json))
@@ -80,14 +83,22 @@ void ofApp::setup()
 
                                     for (auto& hashtag: json["hashtags"])
                                     {
-                                        hashtags.insert(hashtag.get<std::string>());
+                                        std::string h = hashtag.get<std::string>();
+
+                                        if (invalidHashtags.find(hashtag) == invalidHashtags.end())
+                                        {
+                                            hashtags.insert(hashtag.get<std::string>());
+                                            ss << " " << hashtag;
+                                        }
                                     }
+                                }
+                                else
+                                {
+                                    ss << "ERROR" << std::endl;
                                 }
                             }
 
                             ss << std::endl;
-                            
-                            std::set<std::string> invalid = { "/" };
 
                             std::vector<string> consolidatedHashtags;
 
