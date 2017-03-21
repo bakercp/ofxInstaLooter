@@ -62,9 +62,42 @@ void ofApp::setup()
                             std::stringstream ss;
                             ss << "Merging:" << std::endl;
 
-                            for (auto& p: entry.second)
+                            std::set<std::string> hashtags;
+
+                            ofJson reference;
+
+                            for (std::size_t i = 0; i < entry.second.size(); ++i)
                             {
-                                ss << "      >" << std::filesystem::basename(p) << std::endl;
+                                std::filesystem::path jsonPath = entry.second[i];
+
+                                jsonPath = jsonPath.replace_extension(".json.gz");
+
+                                ofJson json;
+
+                                if (ofxIO::JSONUtils::loadJSON(jsonPath, json))
+                                {
+                                    if (i == 0) reference = json;
+
+                                    for (auto& hashtag: json["hashtags"])
+                                    {
+                                        hashtags.insert(hashtag.get<std::string>());
+                                    }
+                                }
+                            }
+
+                            ss << std::endl;
+                            
+                            std::set<std::string> invalid = { "/" };
+
+                            std::vector<string> consolidatedHashtags;
+
+                            for (auto& hashtag: hashtags)
+                            {
+                                if (invalid.find(hashtag) == invalid.end())
+                                {
+                                    consolidatedHashtags.push_back(hashtag);
+                                    ss << " " << hashtag;
+                                }
                             }
 
                             ofLogNotice() << ss.str();
@@ -83,7 +116,6 @@ void ofApp::setup()
 
 cout << "hhh" << endl;
 
-    // ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(existingPost));
 }
 
 
