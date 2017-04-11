@@ -10,8 +10,9 @@
 
 void ofApp::setup()
 {
-//    ofSetLogLevel(OF_LOG_VERBOSE);
+    // ofSetLogLevel(OF_LOG_VERBOSE);
     ofLog::setChannel(std::make_shared<ofxIO::ThreadsafeConsoleLoggerChannel>());
+
     ofJson settings = ofLoadJson("settings.json");
 
     manager.setup(settings["paths"], settings["sources"]["instagram"]);
@@ -26,6 +27,7 @@ void ofApp::update()
     while (manager.posts.tryReceive(post))
     {
         std::stringstream ss;
+
         for (auto hashtag: post.hashtags())
         {
             ss << hashtag << ",";
@@ -37,6 +39,7 @@ void ofApp::update()
     while (manager.updatedPosts.tryReceive(post))
     {
         std::stringstream ss;
+        
         for (auto hashtag: post.hashtags())
         {
             ss << hashtag << ",";

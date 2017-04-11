@@ -1,3 +1,0 @@
-ofxIO
-ofxInstaLooter
-ofxPoco

@@ -86,7 +86,7 @@ public:
         ID_PATH_DEPTH = 6
     };
 
-//private:
+private:
     std::filesystem::path _path;
 
     uint64_t _id = 0;
@@ -98,17 +98,11 @@ public:
 
     friend class HashtagClient;
     friend class HashtagClientManager;
+    
 };
 
 
-/// Images are saved at
-///
-/// storePath / instagram / hashtag / ...
-///
-/// Images are downloaded to
-///
-/// storePath / instagram / hashtag / downloads
-
+/// \brief A wrapper for executing instaLooter and organizing its loot.
 class HashtagClient: public IO::PollingThread
 {
 public:
@@ -120,6 +114,7 @@ public:
                   uint64_t numImagesToDownload = DEFAULT_NUM_IMAGES_TO_DOWNLOAD,
                   const std::filesystem::path& instaLooterPath = DEFAULT_INSTALOOTER_PATH);
 
+    /// \brief Destroy the HashtagClient.
     virtual ~HashtagClient();
 
     void setUsername(const std::string& username);
@@ -128,22 +123,20 @@ public:
     void setPassword(const std::string& password);
     std::string getPassword() const;
 
+    /// \brief A thread channel for new posts fo und by this client.
     IO::ThreadChannel<Post> posts;
 
-    enum
-    {
-        /// \brief The default Instagram polling interval in milliseconds.
-        DEFAULT_POLLING_INTERVAL = 15000,
+    /// \brief The default Instagram polling interval in milliseconds.
+    static const uint64_t DEFAULT_POLLING_INTERVAL;
 
-        DEFAULT_NUM_IMAGES_TO_DOWNLOAD = 4000,
+    /// \brief The default number of images to download per query.
+    static const uint64_t DEFAULT_NUM_IMAGES_TO_DOWNLOAD;
 
-        /// \brief Default command timeout in milliseconds.
-        DEFAULT_PROCESS_TIMEOUT = 300000,
+    /// \brief Default command timeout in milliseconds.
+    static const uint64_t DEFAULT_PROCESS_TIMEOUT;
 
-        /// \brief Thread sleep timeout in milliseconds.
-        PROCESS_THREAD_SLEEP = 1000
-
-    };
+    /// \brief Thread sleep timeout in milliseconds.
+    static const uint64_t PROCESS_THREAD_SLEEP;
 
     /// \brief Default instaLooter script path.
     static const std::string DEFAULT_INSTALOOTER_PATH;
@@ -152,18 +145,30 @@ public:
     static const std::string FILENAME_TEMPLATE;
 
 private:
+    /// \brief An internal function for executing instaLooter.
     void _loot();
 
+    /// \brief If true, there is no output from instaLooter.
     bool _quiet = false;
 
+    /// \brief The optional username for authenticated searches.
     std::string _username;
+
+    /// \brief The optional password for authenticated searches.
     std::string _password;
 
+    /// \brief The search hashtag.
     std::string _hashtag;
 
     std::filesystem::path _storePath;
+
+    /// \brief The image save path.
     std::filesystem::path _savePath;
+
+    /// \brief The raw download path.
     std::filesystem::path _downloadPath;
+
+    /// \brief The location of the instaLooter app.
     std::filesystem::path _instaLooterPath;
 
     uint64_t _numImagesToDownload = DEFAULT_NUM_IMAGES_TO_DOWNLOAD;

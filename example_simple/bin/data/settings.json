@@ -4,10 +4,6 @@
   },
   "sources": {
     "instagram": {
-      "credentials": {
-        "username": "USERNAME",
-        "password": "PASSWORD"
-      },
       "instalooter_path": "/Users/bakercp/anaconda/bin/instaLooter",
       "searches": [
         {
