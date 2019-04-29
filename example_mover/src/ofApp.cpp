@@ -29,6 +29,9 @@ void ofApp::setup()
         }
         else if (!std::filesystem::is_directory(dir->path()))
         {
+
+try {
+
             Post post = Post::fromOldSortedPath(dir->path());
 
             std::filesystem::path newPath = _savePath / Post::relativeStorePathForImage(post);
@@ -75,9 +78,10 @@ void ofApp::setup()
             {
                 ofJson existingPostJson;
 
-                if (ofx::IO::JSONUtils::loadJSON(jsonPath, existingPostJson))
+                if (!ofx::IO::JSONUtils::loadJSON(jsonPath, existingPostJson))
                 {
-                    ofLogError("HashtagClientManager::_process") << "Image, but invalid json, saving afterall.";
+	         
+                    ofLogError("HashtagClientManager::_process") << "Image, but invalid json, saving afterall." << dir->path().string();;
                     ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(newPost));
                 }
                 else
@@ -98,7 +102,9 @@ void ofApp::setup()
                         {
                             existingPost._hashtags = oldHashtags;
                             ofx::IO::JSONUtils::saveJSON(jsonPath, Post::toJSON(existingPost));
-                        }
+
+			   ofLogNotice("Processing ... ") << "Found duplicate. <" << dir->path().string();;
+			}
                         else
                         {
                             // skipping
@@ -111,7 +117,13 @@ void ofApp::setup()
                     }
                 }
             }
-        }
+
+} catch (const std::exception& e)
+{
+ofLogError("SSSS") << e.what() << " " << dir->path().string();
+
+}
+}
 
         ++dir;
     }
