@@ -11,7 +11,6 @@
 
 void ofApp::setup()
 {
-    ofSetFrameRate(1);
     ofSetLoggerChannel(std::make_shared<ofxIO::ThreadsafeConsoleLoggerChannel>());
 
 
@@ -21,7 +20,7 @@ void ofApp::setup()
 
     for (auto line: lines) paths.send(line);
 
-    std::size_t numThreads = 1;
+    std::size_t numThreads = 16;
 
     for (std::size_t i = 0; i < numThreads; ++i)
     {
@@ -29,7 +28,6 @@ void ofApp::setup()
             std::filesystem::path path;
             while (paths.receive(path))
             {
-
                 try
                 {
                     std::unordered_map<uint64_t, std::vector<std::filesystem::path>> pathMap;
@@ -38,8 +36,10 @@ void ofApp::setup()
 
                     while (iter != end)
                     {
+
                         std::string extension = std::filesystem::extension(*iter);
                         std::string basename = std::filesystem::basename(*iter);
+
 
                         if (basename.size() > 0 && basename[0] != '.' && extension != ".gz" && extension != ".json")
                         {
@@ -60,29 +60,14 @@ void ofApp::setup()
                         if (entry.second.size() > 1)
                         {
                             std::stringstream ss;
-                            //ss << "Merging:" << std::endl;
+                            ss << "Merging:" << std::endl;
 
                             std::set<std::string> hashtags;
 
                             ofJson reference;
 
-                            uint64_t fs = -1;
-
-
                             for (std::size_t i = 0; i < entry.second.size(); ++i)
                             {
-                                uint64_t _fs = std::filesystem::file_size(entry.second[i]);
-
-                                if (i == 0)
-                                {
-                                    fs = _fs;
-                                }
-                                else if (fs != _fs)
-                                {
-                                    ss << "    NON MATCHING FS ";
-                                }
-
-
                                 std::filesystem::path jsonPath = entry.second[i];
 
                                 jsonPath = jsonPath.replace_extension(".json.gz");
@@ -91,39 +76,31 @@ void ofApp::setup()
 
                                 if (ofxIO::JSONUtils::loadJSON(jsonPath, json))
                                 {
+                                    if (i == 0) reference = json;
+
                                     for (auto& hashtag: json["hashtags"])
                                     {
-                                        std::string h = hashtag.get<std::string>();
-                                        if (h.length() > 1)
-                                            hashtags.insert(h);
-                                    }
-
-                                    if (i == entry.second.size() -1)
-                                    {
-                                        reference = json;
-                                        ss << "    Keeping " << entry.second[i].string() << std::endl;
-                                    }
-                                    else
-                                    {
-                                        ss << "    Removing " << entry.second[i].string() << std::endl;
+                                        hashtags.insert(hashtag.get<std::string>());
                                     }
                                 }
-
-
                             }
 
                             ss << std::endl;
                             
+                            std::set<std::string> invalid = { "/" };
+
+                            std::vector<string> consolidatedHashtags;
+
                             for (auto& hashtag: hashtags)
                             {
-                                ss << " " << hashtag;
+                                if (invalid.find(hashtag) == invalid.end())
+                                {
+                                    consolidatedHashtags.push_back(hashtag);
+                                    ss << " " << hashtag;
+                                }
                             }
 
-                            reference["hashtags"] = hashtags;
-
-			    // ofxIO::JSONUtils::saveJSON(reference);
-	
-                                ofLogNotice() << ss.str();
+                            ofLogNotice() << ss.str();
                         }
                     }
 
@@ -137,18 +114,10 @@ void ofApp::setup()
         }));
     }
 
+cout << "hhh" << endl;
+
 }
 
-
-void ofApp::update()
-{
-    if (paths.size() == 0)
-    {
-        std::cout << "done" << std::endl;
-        paths.close();
-        for (auto& t: threads) t.join();
-    }
-}
 
 void ofApp::exit()
 {

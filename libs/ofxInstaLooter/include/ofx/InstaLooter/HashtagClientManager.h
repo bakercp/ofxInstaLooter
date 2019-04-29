@@ -17,6 +17,7 @@ namespace ofx {
 namespace InstaLooter {
 
 
+/// \brief Manage multiple HashTagClients and merge their results.
 class HashtagClientManager: public IO::PollingThread
 {
 public:
@@ -27,6 +28,8 @@ public:
 
     /// \brief New posts.
     IO::ThreadChannel<Post> posts;
+
+    /// \brief Posts that have been downloaded already but have additional or updated info (e.g. hashtags).
     IO::ThreadChannel<Post> updatedPosts;
 
 private:

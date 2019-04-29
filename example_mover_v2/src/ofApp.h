@@ -16,7 +16,6 @@ class ofApp: public ofBaseApp
 {
 public:
     void setup() override;
-    void update() override;
     void exit() override;
 
     std::vector<std::thread> threads;

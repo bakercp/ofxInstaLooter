@@ -4,22 +4,23 @@
   },
   "sources": {
     "instagram": {
-      "credentials": {
-        "username": "USERNAME",
-        "password": "PASSWORD"
-      },
       "manager_polling_interval": 1000,
       "instalooter_path": "/Users/bakercp/anaconda/bin/instaLooter",
       "searches": [
         {
           "hashtag": "me",
           "polling_interval": 5000,
-          "num_images_to_download": 10
+          "num_images_to_download": 50
         },
         {
           "hashtag": "selfie",
           "polling_interval": 5000,
-          "num_images_to_download": 10
+          "num_images_to_download": 50
+        },
+        {
+          "hashtag": "selfies",
+          "polling_interval": 5000,
+          "num_images_to_download": 50
         }
       ]
     }

@@ -24,8 +24,8 @@ void ofApp::setup()
     std::filesystem::path imageStorePath = ofToDataPath(paths["image_store_path"], true);
     std::filesystem::path instaLooterPath = ofToDataPath(instagram["instalooter_path"], true);
 
-    std::string username = instagram["credentials"]["username"];
-    std::string password = instagram["credentials"]["password"];
+    std::string username = "";//instagram["credentials"]["username"];
+    std::string password = "";//instagram["credentials"]["password"];
 
     // Get the 0th search.
     const auto& search = instagram["searches"][0];
@@ -51,6 +51,13 @@ void ofApp::update()
 
     while (client->posts.tryReceive(post))
     {
-        std::cout << post.hashtag() << " " << post.path() << std::endl;
+        auto hashtags = post.hashtags();
+
+        for (auto hashtag: hashtags)
+        {
+            std::cout << hashtag << ", ";
+        }
+
+        std::cout << post.path() << std::endl;
     }
 }

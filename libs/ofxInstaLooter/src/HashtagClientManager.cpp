@@ -28,34 +28,67 @@ HashtagClientManager::~HashtagClientManager()
 
 void HashtagClientManager::setup(const ofJson& paths, const ofJson& settings)
 {
-    _storePath = ofToDataPath(paths["image_store_path"], true);
+    _storePath = ofToDataPath(paths.value("image_store_path", ""), true);
     _savePath = _storePath / "instagram";
 
-    setPollingInterval(settings["manager_polling_interval"]);
+    setPollingInterval(settings.value("manager_polling_interval",
+                                      getPollingInterval()));
 
-    auto instaLooterPath = ofToDataPath(settings["instalooter_path"], true);
+    auto instaLooterPath = ofToDataPath(settings.value("instalooter_path",
+                                                       HashtagClient::DEFAULT_INSTALOOTER_PATH),
+                                        true);
 
-    std::string username = settings["credentials"]["username"];
-    std::string password = settings["credentials"]["password"];
+    auto credentials = settings.find("credentials");
 
-    for (const auto& search: settings["searches"])
+    std::string username = "";
+    std::string password = "";
+
+    if (credentials != settings.end())
     {
-        std::string hashtag = search["hashtag"];
-        uint64_t interval = search["polling_interval"];
-        uint64_t numImagesToDownload = search["num_images_to_download"];
-
-        auto client = std::make_unique<HashtagClient>(hashtag,
-                                                      username,
-                                                      password,
-                                                      _storePath,
-                                                      interval,
-                                                      numImagesToDownload,
-                                                      instaLooterPath);
-
-        _clients.push_back(std::move(client));
+        username = credentials->value("username", "");
+        password = credentials->value("password", "");
     }
 
-    start();
+    auto searchesIter = settings.find("searches");
+
+    if (searchesIter != settings.end())
+    {
+        for (const auto& search: *searchesIter)
+        {
+            auto hashtagIter = search.find("hashtag");
+
+            if (hashtagIter != search.end())
+            {
+                std::string hashtag = hashtagIter->get<std::string>();
+
+                uint64_t interval = search.value("polling_interval",
+                                                 HashtagClient::DEFAULT_POLLING_INTERVAL);
+
+                uint64_t numImagesToDownload = search.value("num_images_to_download",
+                                                            HashtagClient::DEFAULT_NUM_IMAGES_TO_DOWNLOAD);
+
+                auto client = std::make_unique<HashtagClient>(hashtag,
+                                                              username,
+                                                              password,
+                                                              _storePath,
+                                                              interval,
+                                                              numImagesToDownload,
+                                                              instaLooterPath);
+
+                _clients.push_back(std::move(client));
+            }
+            else
+            {
+                ofLogError("HashtagClientManager::setup") << "No hashtag was listed in the search.";
+            }
+        }
+
+        start();
+    }
+    else
+    {
+        ofLogError("HashtagClientManager::setup") << "No searches were in the settings file.";
+    }
 }
 
 

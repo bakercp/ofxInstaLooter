@@ -83,16 +83,6 @@ std::set<std::string> Post::hashtags() const
     return _hashtags;
 }
 
-//bool Post::isDuplicate() const
-//{
-//    return _isDuplicate;
-//}
-
-
-//void Post::setIsDuplicate(bool isDuplicate)
-//{
-//    _isDuplicate = isDuplicate;
-//}
 
 Post Post::fromOldSortedPath(const std::filesystem::path& path)
 {
@@ -213,7 +203,7 @@ std::tm Post::parseDownloadDateTime(const std::string& dateTime)
     _tm.tm_hour = ofToInt(timeToken.substr(0, hIndex));
     _tm.tm_min = ofToInt(timeToken.substr(hIndex + 1, mIndex - hIndex - 1));
     _tm.tm_sec = ofToInt(timeToken.substr(mIndex + 1, sIndex - mIndex - 1));
-    // ignore milliseconds
+    // Ignore milliseconds token.
 
     return _tm;
 }
@@ -263,17 +253,30 @@ ofJson Post::toJSON(const Post& post)
 Post Post::fromJSON(const ofJson& json)
 {
     Post post;
-    post._path = std::filesystem::path(json["path"].get<std::string>());
-    post._id = json["id"];
-    post._userId = json["user_id"];
-    post._timestamp = json["timestamp"];
-    post._width = json["width"];
-    post._height = json["height"];
-    post._hashtags = json["hashtags"].get<std::set<std::string>>();
+
+    try
+    {
+        post._path = std::filesystem::path(json["path"].get<std::string>());
+        post._id = json["id"];
+        post._userId = json["user_id"];
+        post._timestamp = json["timestamp"];
+        post._width = json["width"];
+        post._height = json["height"];
+        post._hashtags = json["hashtags"].get<std::set<std::string>>();
+    }
+    catch (const std::exception& exc)
+    {
+        ofLogError("Post::fromJSON") << "Error parsing JSON:" << exc.what();
+    }
+
     return post;
 }
 
 
+const uint64_t HashtagClient::DEFAULT_POLLING_INTERVAL = 15000;
+const uint64_t HashtagClient::DEFAULT_NUM_IMAGES_TO_DOWNLOAD = 4000;
+const uint64_t HashtagClient::DEFAULT_PROCESS_TIMEOUT = 300000;
+const uint64_t HashtagClient::PROCESS_THREAD_SLEEP = 1000;
 const std::string HashtagClient::DEFAULT_INSTALOOTER_PATH = "/usr/local/bin/instaLooter";
 const std::string HashtagClient::FILENAME_TEMPLATE = "{id}.{ownerid}.{datetime}";
 
@@ -301,6 +304,7 @@ HashtagClient::HashtagClient(const std::string& hashtag,
     // Add file folder extensions.
     _fileExtensionFilter.addExtensions({ "jpg", "jpeg", "gif", "png" });
 
+    // Start the thread.
     start();
 }
 
